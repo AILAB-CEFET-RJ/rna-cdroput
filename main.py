@@ -14,8 +14,12 @@ from modules import training as t
 from modules import regularization as reg
 
 
+class Object(object):
+    pass
+
+
 def build_d(x_train, y_train, x_test, y_test, x_val, y_val, scaler):
-    d = {}
+    d = Object()
     d.x_train = x_train
     d.y_train = y_train
     d.x_test = x_test
@@ -40,9 +44,9 @@ def build_cfg(D, neurons_0, neurons_1, learning_rate, epochs, num_runs):
     callbacks = [earlyStopping, mcp_save]
     device_name = tf.test.gpu_device_name()
 
-    cfg = {}
+    cfg = Object()
     cfg.device_name = device_name
-    cfg.callback = callbacks
+    cfg.callbacks = callbacks
     cfg.learning_rate = learning_rate
     cfg.epochs = epochs
     cfg.D = D
@@ -55,11 +59,11 @@ def build_cfg(D, neurons_0, neurons_1, learning_rate, epochs, num_runs):
 
 def parser():
    parser = argparse.ArgumentParser(description='RNA Experiments')
-   parser.add_argument('e', metavar='EPOCHS', help='Epochs.')
+   parser.add_argument('e', metavar='EPOCHS', type=int, help='Epochs.')
    parser.add_argument('dp', metavar='DROPOUT', help='Dropout class to use.')
-   parser.add_argument('runs', metavar='RUNS', help='Total runs.')
-   parser.add_argument('lr', metavar='LR', help='Learning rate.')
-   parser.add_argument('f', metavar='NF', help='Number of features.')
+   parser.add_argument('runs', metavar='RUNS', type=int, help='Total runs.')
+   parser.add_argument('lr', metavar='LR', type=float,help='Learning rate.')
+   parser.add_argument('f', metavar='NF', type=int, help='Number of features.')
    parser.add_argument('dataset', metavar='DS', help='Dataset to use [teddy|happy|kaggle|kaggle_bkp].')
 
    return parser
