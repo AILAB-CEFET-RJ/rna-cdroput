@@ -1,4 +1,5 @@
 import numpy as np
+import pickle as pk
 
 from math import sqrt
 
@@ -11,6 +12,12 @@ from tensorflow import keras
 from tensorflow.keras import layers
 
 
+def serialize(hists, cfg):
+    dump_file = f"hist_{cfg.args.dp}_{cfg.args.dataset}"
+    pk.dump(hists, open(dump_file, 'w+'))
+    print(f"Hist[{dump_file}] dumped!")
+
+
 def do_training_runs(d, cfg, verbose, customized_dropout=None):
     print(f'Using device: {cfg.device_name}')
     with tf.device(cfg.device_name):
@@ -19,6 +26,7 @@ def do_training_runs(d, cfg, verbose, customized_dropout=None):
         maes = np.array([])
         rmses = np.array([])
         r2s = np.array([])
+        hists = np.array([])
 
         for i in range(cfg.num_runs):
             print('***Run #%d***' % i)
@@ -39,10 +47,13 @@ def do_training_runs(d, cfg, verbose, customized_dropout=None):
             r2 = r2_score(d.y_test, outputs)
 
             mses = np.append(mses, mse)
-            maes = np.append(mae, mse)
-            rmses = np.append(rmse, mse)
-            r2s = np.append(r2, mse)
+            maes = np.append(maes, mae)
+            rmses = np.append(rmses, rmse)
+            r2s = np.append(r2s, r2)
+            hists = np.append(hists, hist)
 
+        print('================ ARGS USED ===================')
+        print(cfg.args)
         print('================ RESULTS ===================')
         print('Average over %d runs:' % cfg.num_runs)
         print(np.mean(all_scores, axis=0))
@@ -54,6 +65,9 @@ def do_training_runs(d, cfg, verbose, customized_dropout=None):
         print(f"MAE  {maes.mean():.3f}±{maes.std():.3f}")
         print(f"RMSE {rmses.mean():.3f}±{rmses.std():.3f}")
         print(f"R2   {r2s.mean():.3f}±{r2s.std():.3f}")
+
+        #serialize(hists, cfg)
+        #print("Dump hists!")
 
         return model, hist, all_scores
 

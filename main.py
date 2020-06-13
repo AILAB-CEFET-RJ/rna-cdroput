@@ -3,7 +3,6 @@ import os
 import argparse
 
 from numpy.random import seed
-import matplotlib.pyplot as plt
 
 import tensorflow as tf
 from tensorflow.keras.callbacks import EarlyStopping
@@ -31,7 +30,7 @@ def build_d(x_train, y_train, x_test, y_test, x_val, y_val, scaler):
     return d
 
 
-def build_cfg(D, neurons_0, neurons_1, learning_rate, epochs, num_runs):
+def build_cfg(D, neurons_0, neurons_1, learning_rate, epochs, num_runs, args):
     model_dir = '.'
     patience = int(0.2 * epochs)
     best_weights_filepath = os.path.join(model_dir, 'model_weights.hdf5')
@@ -53,6 +52,7 @@ def build_cfg(D, neurons_0, neurons_1, learning_rate, epochs, num_runs):
     cfg.l1_units = neurons_0
     cfg.l2_units = neurons_1
     cfg.num_runs = num_runs
+    cfg.args = args
 
     return cfg
 
@@ -101,18 +101,9 @@ if __name__ == '__main__':
     print(f'dim: {D} for hl_0[{neurons_0}], hl_1[{neurons_1}]')
 
     d = build_d(x_train, y_train, x_test, y_test, x_val, y_val, scaler)
-    cfg = build_cfg(D, neurons_0, neurons_1, learning_rate, epochs, num_runs)
+    cfg = build_cfg(D, neurons_0, neurons_1, learning_rate, epochs, num_runs, args)
     dropout = reg.select_dropout(dropout_opt)
 
     model, hist, all_scores = t.do_training_runs(d, cfg, dropout)
 
     outputs = model.predict(x_test)
-
-    # epoch x loss (mse)
-    plt.plot(
-        [x for x in range(0, len(hist.history['mse']))],
-        hist.history['mse'],
-        hist.history['val_mse']
-    )
-    plt.legend(['train', 'val'])
-    plt.show()

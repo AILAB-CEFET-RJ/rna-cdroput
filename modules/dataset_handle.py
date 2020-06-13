@@ -55,28 +55,20 @@ def download_data(dataset_name):
 
 
 def download_teddy():
-  out = os.system('wget https://raw.githubusercontent.com/COINtoolbox/photoz_catalogues/master/Teddy/forTemplateBased/teddyT_A.cat')
-  print(out)
-  out = os.system('mv teddyT_A.cat teddy_train_data')
-  print(out)
+  os.system('wget https://raw.githubusercontent.com/COINtoolbox/photoz_catalogues/master/Teddy/forTemplateBased/teddyT_A.cat')
+  os.system('mv teddyT_A.cat teddy_train_data')
 
 
 def download_happy():
-  out = os.system('https://raw.githubusercontent.com/COINtoolbox/photoz_catalogues/master/Happy/forTemplateBased/happyT_A')
-  print(out)
-  out = os.system('mv happyT_A happy_train_data')
-  print(out)
+  os.system('https://raw.githubusercontent.com/COINtoolbox/photoz_catalogues/master/Happy/forTemplateBased/happyT_A')
+  os.system('mv happyT_A happy_train_data')
 
 
 def download_kaggle():
-  out = os.system('wget -O archieve.zip "https://storage.googleapis.com/kaggle-competitions-data/kaggle-v2/3617/105309/bundle/archive.zip?GoogleAccessId=web-data@kaggle-161607.iam.gserviceaccount.com&Expires=1589667788&Signature=PqUjFhjNMhS9DEBnk3Yxzo%2BXnKS9c3v1XbmW%2F2dVcromNwDnELmnVSAtGD%2BFi%2FiNay801TWg84P0N6qCq8D5P%2BcOj92zcBB0%2BjPX8yIKvvwud3mA%2FCW%2FLAXTCbgGHrNKUUSIAMhkwro41Nzi%2F4lP0pIpCugQr44bWnCmh57zmt5CNJDb63ZS7CiZyZGsNg6YebXTAzR3yuNbdtMd3pvmQJwv%2FPedtyoR4PhloelwqE3fxVx2pt9AdZzE%2FU%2BRVyoFCnj1EiQBq8oDES2TEoJde9rTCIMWM6OtFPa%2Bq3e%2BqDC9lzgkywTPJ4hjmRA4VmFgPWb57uOX7T2QZuHnnIG87g%3D%3D&response-content-disposition=attachment%3B+filename%3Dphotometric-redshift-estimation-2013.zip"')
-  print(out)
-  out = os.system('unzip -u archieve.zip')
-  print(out)
-  out = os.system('unzip -u train.zip')
-  print(out)
-  out = os.system('mv train.csv kaggle_train_data.csv')
-  print(out)
+  os.system('wget -O archieve.zip "https://storage.googleapis.com/kaggle-competitions-data/kaggle-v2/3617/105309/bundle/archive.zip?GoogleAccessId=web-data@kaggle-161607.iam.gserviceaccount.com&Expires=1589667788&Signature=PqUjFhjNMhS9DEBnk3Yxzo%2BXnKS9c3v1XbmW%2F2dVcromNwDnELmnVSAtGD%2BFi%2FiNay801TWg84P0N6qCq8D5P%2BcOj92zcBB0%2BjPX8yIKvvwud3mA%2FCW%2FLAXTCbgGHrNKUUSIAMhkwro41Nzi%2F4lP0pIpCugQr44bWnCmh57zmt5CNJDb63ZS7CiZyZGsNg6YebXTAzR3yuNbdtMd3pvmQJwv%2FPedtyoR4PhloelwqE3fxVx2pt9AdZzE%2FU%2BRVyoFCnj1EiQBq8oDES2TEoJde9rTCIMWM6OtFPa%2Bq3e%2BqDC9lzgkywTPJ4hjmRA4VmFgPWb57uOX7T2QZuHnnIG87g%3D%3D&response-content-disposition=attachment%3B+filename%3Dphotometric-redshift-estimation-2013.zip"')
+  os.system('unzip -u archieve.zip')
+  os.system('unzip -u train.zip')
+  os.system('mv train.csv kaggle_train_data.csv')
 
 
 def download_kaggle_alternative():
