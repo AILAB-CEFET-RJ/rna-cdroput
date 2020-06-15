@@ -17,7 +17,7 @@ class Object(object):
     pass
 
 
-def build_d(x_train, y_train, x_test, y_test, x_val, y_val, scaler):
+def build_d(x_train, y_train, x_test, y_test, x_val, y_val):
     d = Object()
     d.x_train = x_train
     d.y_train = y_train
@@ -25,7 +25,6 @@ def build_d(x_train, y_train, x_test, y_test, x_val, y_val, scaler):
     d.y_test = y_test
     d.x_val = x_val
     d.y_val = y_val
-    d.scaler = scaler
 
     return d
 
@@ -61,6 +60,7 @@ def parser():
    parser = argparse.ArgumentParser(description='RNA Experiments')
    parser.add_argument('e', metavar='EPOCHS', type=int, help='Epochs.')
    parser.add_argument('dp', metavar='DROPOUT', help='Dropout class to use.')
+   parser.add_argument('sc', metavar='SCALER', help='Scaler class to use.')
    parser.add_argument('runs', metavar='RUNS', type=int, help='Total runs.')
    parser.add_argument('lr', metavar='LR', type=float,help='Learning rate.')
    parser.add_argument('f', metavar='NF', type=int, help='Number of features.')
@@ -80,13 +80,15 @@ if __name__ == '__main__':
     epochs = args.e
     learning_rate = args.lr
     num_features = args.f
+    scaler_opt = args.sc
 
     seed(42)
     tf.random.set_seed(42)
 
     dh.download_data(dataset_name)
     df = dh.load_dataframe(dataset_name)
-    x_train, y_train, x_test, y_test, x_val, y_val, scaler = dh.build_dataset(df, num_features, norm=True)
+    scaler_to_use = reg.select_scaler(scaler_opt)
+    x_train, y_train, x_test, y_test, x_val, y_val, scaler = dh.build_dataset(df, num_features, scaler_to_use, norm=True)
 
     print('x_train.shape: ', x_train.shape)
     print('x_test.shape: ', x_test.shape)
@@ -100,7 +102,7 @@ if __name__ == '__main__':
 
     print(f'dim: {D} for hl_0[{neurons_0}], hl_1[{neurons_1}]')
 
-    d = build_d(x_train, y_train, x_test, y_test, x_val, y_val, scaler)
+    d = build_d(x_train, y_train, x_test, y_test, x_val, y_val)
     cfg = build_cfg(D, neurons_0, neurons_1, learning_rate, epochs, num_runs, args)
     dropout = reg.select_dropout(dropout_opt)
 

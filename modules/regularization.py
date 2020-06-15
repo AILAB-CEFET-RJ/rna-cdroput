@@ -3,14 +3,28 @@ from tensorflow.keras.layers import Dropout
 from tensorflow.python.keras.utils import tf_utils
 from tensorflow.python.ops import array_ops
 
+from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import MinMaxScaler
+
 
 def select_dropout(dropout_opt):
+    print(f"Selected Dropout: {dropout_opt}")
     if dropout_opt == 'none':
         return None
     if dropout_opt == 'DropoutErrorBased':
         return DropoutErrorBased()
     if dropout_opt == 'ErrorBasedDropoutZero':
         return ErrorBasedDropoutZero()
+
+
+def select_scaler(scaler_opt):
+    print(f"Selected Scaler: {scaler_opt}")
+    if scaler_opt == 'none':
+        return None
+    if scaler_opt == 'StandardScaler':
+        return StandardScaler()
+    if scaler_opt == 'MinMaxScaler':
+        return MinMaxScaler()
 
 
 def bit_mask(keep_prob):
