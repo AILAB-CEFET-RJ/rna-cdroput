@@ -104,6 +104,6 @@ if __name__ == '__main__':
     cfg = build_cfg(D, neurons_0, neurons_1, learning_rate, epochs, num_runs, args)
     dropout = reg.select_dropout(dropout_opt)
 
-    model, hist, all_scores = t.do_training_runs(d, cfg, dropout)
+    model, hist, all_scores = t.do_training_runs(d, cfg, 0, dropout)
 
     outputs = model.predict(x_test)

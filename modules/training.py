@@ -1,5 +1,5 @@
 import numpy as np
-import pickle as pk
+import pandas as pd
 
 from math import sqrt
 
@@ -12,13 +12,13 @@ from tensorflow import keras
 from tensorflow.keras import layers
 
 
-def serialize(hists, cfg):
-    dump_file = f"hist_{cfg.args.dp}_{cfg.args.dataset}"
-    pk.dump(hists, open(dump_file, 'w+'))
+def serialize(hist, cfg, i):
+    dump_file = f"hist_run_{i}_{cfg.args.dp}_{cfg.args.dataset}"
+    pd.DataFrame.from_dict(hist.history).to_csv(dump_file, index=False)
     print(f"Hist[{dump_file}] dumped!")
 
 
-def do_training_runs(d, cfg, verbose, customized_dropout=None):
+def do_training_runs(d, cfg, verbose=0, customized_dropout=None):
     print(f'Using device: {cfg.device_name}')
     with tf.device(cfg.device_name):
         all_scores = np.empty(shape=(0,3))
@@ -26,7 +26,6 @@ def do_training_runs(d, cfg, verbose, customized_dropout=None):
         maes = np.array([])
         rmses = np.array([])
         r2s = np.array([])
-        hists = np.array([])
 
         for i in range(cfg.num_runs):
             print('***Run #%d***' % i)
@@ -50,7 +49,7 @@ def do_training_runs(d, cfg, verbose, customized_dropout=None):
             maes = np.append(maes, mae)
             rmses = np.append(rmses, rmse)
             r2s = np.append(r2s, r2)
-            hists = np.append(hists, hist)
+            serialize(hist, cfg, i)
 
         print('================ ARGS USED ===================')
         print(cfg.args)
@@ -65,9 +64,6 @@ def do_training_runs(d, cfg, verbose, customized_dropout=None):
         print(f"MAE  {maes.mean():.3f}±{maes.std():.3f}")
         print(f"RMSE {rmses.mean():.3f}±{rmses.std():.3f}")
         print(f"R2   {r2s.mean():.3f}±{r2s.std():.3f}")
-
-        #serialize(hists, cfg)
-        #print("Dump hists!")
 
         return model, hist, all_scores
 
