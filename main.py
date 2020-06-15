@@ -58,13 +58,13 @@ def build_cfg(D, neurons_0, neurons_1, learning_rate, epochs, num_runs, args):
 
 def parser():
    parser = argparse.ArgumentParser(description='RNA Experiments')
-   parser.add_argument('e', metavar='EPOCHS', type=int, help='Epochs.')
-   parser.add_argument('dp', metavar='DROPOUT', help='Dropout class to use.')
-   parser.add_argument('sc', metavar='SCALER', help='Scaler class to use.')
-   parser.add_argument('runs', metavar='RUNS', type=int, help='Total runs.')
-   parser.add_argument('lr', metavar='LR', type=float,help='Learning rate.')
-   parser.add_argument('f', metavar='NF', type=int, help='Number of features.')
-   parser.add_argument('dataset', metavar='DS', help='Dataset to use [teddy|happy|kaggle|kaggle_bkp].')
+   parser.add_argument('-e', metavar='EPOCHS', type=int, help='Epochs.')
+   parser.add_argument('-dp', metavar='DROPOUT', help='Dropout class to use.')
+   parser.add_argument('-sc', metavar='SCALER', help='Scaler class to use.')
+   parser.add_argument('-runs', metavar='RUNS', type=int, help='Total runs.')
+   parser.add_argument('-lr', metavar='LR', type=float,help='Learning rate.')
+   parser.add_argument('-f', metavar='NF', type=int, help='Number of features.')
+   parser.add_argument('-dataset', metavar='DS', help='Dataset to use [teddy|happy|kaggle|kaggle_bkp].')
 
    return parser
 
