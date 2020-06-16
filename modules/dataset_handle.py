@@ -48,7 +48,7 @@ def load_dataframe(dataset_name):
   if dataset_name == 'happy':
     return pd.read_csv('happy_train_data', comment='#', delim_whitespace=True, names=['ID','u','g','r','i','z','uErr','gErr','rErr','iErr','zErr','redshift','redshiftErr'])
 
-  if dataset_name == 'kaggle' | dataset_name == 'kaggle_bkp':
+  if dataset_name == 'kaggle' or dataset_name == 'kaggle_bkp':
     return pd.read_csv('kaggle_train_data.csv')
 
   return None
