@@ -42,6 +42,9 @@ def build_cfg(D, neurons_0, neurons_1, learning_rate, epochs, num_runs, args):
     callbacks = [earlyStopping, mcp_save]
     device_name = tf.test.gpu_device_name()
 
+    if args.gpu:
+        device_name = args.gpu
+
     cfg = Object()
     cfg.device_name = device_name
     cfg.callbacks = callbacks
@@ -65,6 +68,7 @@ def parser():
    parser.add_argument('-lr', metavar='LR', type=float,help='Learning rate.')
    parser.add_argument('-f', metavar='NF', type=int, help='Number of features.')
    parser.add_argument('-dataset', metavar='DS', help='Dataset to use [teddy|happy|kaggle|kaggle_bkp].')
+   parser.add_argument('-gpu', metavar='DEVICE', help='GPU device name. Default is device name position 0.')
 
    return parser
 
