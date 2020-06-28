@@ -71,7 +71,7 @@ def download_teddy():
 
 
 def download_happy():
-  os.system('https://raw.githubusercontent.com/COINtoolbox/photoz_catalogues/master/Happy/forTemplateBased/happyT_A')
+  os.system('wget https://raw.githubusercontent.com/COINtoolbox/photoz_catalogues/master/Happy/forTemplateBased/happyT_A')
   os.system('mv happyT_A happy_train_data')
 
 
