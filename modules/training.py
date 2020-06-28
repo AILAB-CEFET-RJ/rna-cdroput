@@ -13,7 +13,7 @@ from tensorflow.keras import layers
 
 
 def serialize_results(real, pred, cfg):
-    data = np.array([real, pred]).T
+    data = np.array([real, pred], dtype='float32').T
     df = pd.DataFrame(data=data, columns=['Real', 'Pred'])
     dump_file = f"real_x_pred_{cfg.args.dp}_{cfg.args.sc}_{cfg.args.dataset}"
     df.to_csv(dump_file, index=False)

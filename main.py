@@ -114,4 +114,4 @@ if __name__ == '__main__':
 
     outputs = model.predict(x_test)
 
-    t.serialize_results(x_test.flatten(), outputs.flatten(), cfg)
+    t.serialize_results(y_test.flatten(), outputs.flatten(), cfg)
