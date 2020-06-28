@@ -113,3 +113,5 @@ if __name__ == '__main__':
     model, hist, all_scores = t.do_training_runs(d, cfg, 0, dropout)
 
     outputs = model.predict(x_test)
+
+    t.serialize_results(x_test.flatten(), outputs.flatten(), cfg)

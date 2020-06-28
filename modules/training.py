@@ -12,6 +12,14 @@ from tensorflow import keras
 from tensorflow.keras import layers
 
 
+def serialize_results(real, pred, cfg):
+    data = np.array([real, pred]).T
+    df = pd.DataFrame(data=data, columns=['Real', 'Pred'])
+    dump_file = f"real_x_pred_{cfg.args.dp}_{cfg.args.sc}_{cfg.args.dataset}"
+    df.to_csv(dump_file, index=False)
+    print(f"Result[{dump_file}] dumped!")
+
+
 def serialize(hist, cfg, i):
     dump_file = f"hist_run_{i}_{cfg.args.dp}_{cfg.args.sc}_{cfg.args.dataset}"
     pd.DataFrame.from_dict(hist.history).to_csv(dump_file, index=False)
