@@ -68,10 +68,10 @@ def do_training_runs(d, cfg, verbose=0, customized_dropout=None):
         print(np.std(all_scores, axis=0))
 
         print(f"Results after {cfg.num_runs} [lr: {cfg.learning_rate}]")
-        print(f"MSE  {mses.mean():.3f}±{mses.std():.3f}")
-        print(f"MAE  {maes.mean():.3f}±{maes.std():.3f}")
-        print(f"RMSE {rmses.mean():.3f}±{rmses.std():.3f}")
-        print(f"R2   {r2s.mean():.3f}±{r2s.std():.3f}")
+        print(f"MSE  {mses.mean():.4f}±{mses.std():.4f}")
+        print(f"MAE  {maes.mean():.4f}±{maes.std():.4f}")
+        print(f"RMSE {rmses.mean():.4f}±{rmses.std():.4f}")
+        print(f"R2   {r2s.mean():.4f}±{r2s.std():.4f}")
 
         return model, hist, all_scores
 
