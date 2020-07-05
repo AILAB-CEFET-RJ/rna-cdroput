@@ -1,12 +1,12 @@
 ## RNA Custom Dropout
 ## rna-cdroput
-RNA using a custom droput to estimate cosmological redshifts.
+ANN using a custom droput to estimate cosmological redshifts.
 
 
 ### Usage
 ```shell script
 usage: main.py [-h] [-e EPOCHS] [-dp DROPOUT] [-sc SCALER] [-runs RUNS]
-               [-lr LR] [-f NF] [-dataset DS]
+               [-lr LR] [-f NF] [-dataset DS] [-gpu DEVICE] [-xgbr]
 
 RNA Experiments
 
@@ -19,4 +19,6 @@ optional arguments:
   -lr LR       Learning rate.
   -f NF        Number of features.
   -dataset DS  Dataset to use [teddy|happy|kaggle|kaggle_bkp].
+  -gpu DEVICE  GPU device name. Default is device name position 0.
+  -xgbr        Run XGBoostRegressor instead of ANN.
 ```

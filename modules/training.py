@@ -1,11 +1,13 @@
 import numpy as np
 import pandas as pd
+import time
 
 from math import sqrt
 
 from sklearn.metrics import mean_squared_error
 from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import r2_score
+from sklearn import ensemble
 
 import tensorflow as tf
 from tensorflow import keras
@@ -16,6 +18,10 @@ def serialize_results(real, pred, cfg):
     data = np.array([real, pred], dtype='float32').T
     df = pd.DataFrame(data=data, columns=['Real', 'Pred'])
     dump_file = f"real_x_pred_{cfg.args.dp}_{cfg.args.sc}_{cfg.args.dataset}"
+
+    if cfg.args.xgbr:
+        dump_file = "XGBR_" + dump_file
+
     df.to_csv(dump_file, index=False)
     print(f"Result[{dump_file}] dumped!")
 
@@ -93,3 +99,16 @@ def neural_network(cfg, dropout=None):
                   )
 
     return model
+
+
+def runGradientBoost(x_train, y_train, x_test, params):
+  reg = ensemble.GradientBoostingRegressor(**params)
+
+  start = time.time()
+  reg.fit(x_train, y_train)
+  finish = time.time()
+  print('Training time: {:.5f}'.format(finish - start))
+
+  out = reg.predict(x_test)
+
+  return out

@@ -4,6 +4,8 @@ import argparse
 
 from numpy.random import seed
 
+from sklearn.metrics import mean_squared_error
+
 import tensorflow as tf
 from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.callbacks import ModelCheckpoint
@@ -33,13 +35,13 @@ def build_cfg(D, neurons_0, neurons_1, learning_rate, epochs, num_runs, args):
     model_dir = '.'
     patience = int(0.2 * epochs)
     best_weights_filepath = os.path.join(model_dir, 'model_weights.hdf5')
-    earlyStopping = EarlyStopping(monitor='val_loss', mode='min', patience=patience)
+    early_stopping = EarlyStopping(monitor='val_loss', mode='min', patience=patience)
 
     mcp_save = ModelCheckpoint(
         monitor='val_loss', mode='min', filepath=best_weights_filepath, save_best_only=True
     )
 
-    callbacks = [earlyStopping, mcp_save]
+    callbacks = [early_stopping, mcp_save]
     device_name = tf.test.gpu_device_name()
 
     if args.gpu:
@@ -69,9 +71,9 @@ def parser():
    parser.add_argument('-f', metavar='NF', type=int, help='Number of features.')
    parser.add_argument('-dataset', metavar='DS', help='Dataset to use [teddy|happy|kaggle|kaggle_bkp].')
    parser.add_argument('-gpu', metavar='DEVICE', help='GPU device name. Default is device name position 0.')
+   parser.add_argument('-xgbr', action='store_true', help='Run XGBoostRegressor instead of ANN.')
 
    return parser
-
 
 
 if __name__ == '__main__':
@@ -85,6 +87,7 @@ if __name__ == '__main__':
     learning_rate = args.lr
     num_features = args.f
     scaler_opt = args.sc
+    xgboost = args.xgbr
 
     seed(42)
     tf.random.set_seed(42)
@@ -104,14 +107,29 @@ if __name__ == '__main__':
     neurons_0 = math.ceil(2*D/3)
     neurons_1 = math.ceil(D/2)
 
-    print(f'dim: {D} for hl_0[{neurons_0}], hl_1[{neurons_1}]')
-
     d = build_d(x_train, y_train, x_test, y_test, x_val, y_val)
     cfg = build_cfg(D, neurons_0, neurons_1, learning_rate, epochs, num_runs, args)
-    dropout = reg.select_dropout(dropout_opt)
+    outputs = {}
 
-    model, hist, all_scores = t.do_training_runs(d, cfg, 0, dropout)
-
-    outputs = model.predict(x_test)
+    if xgboost:
+        print("## Run XGBoostRegressor ##")
+        params = {'n_estimators': epochs,
+                  'max_depth': 8,
+                  'min_samples_split': 5,
+                  'validation_fraction': 0.2,
+                  'n_iter_no_change': int(0.2 * epochs),
+                  'learning_rate': learning_rate,
+                  'loss': 'ls',
+                  'random_state': 0
+                  }
+        outputs = t.runGradientBoost(x_train, y_train, x_test, params)
+        mse = mean_squared_error(y_test, outputs)
+        print("MSE on test set: {:.5f}".format(mse))
+    else:
+        print("## Run ANN ##")
+        print(f'dim: {D} for hl_0[{neurons_0}], hl_1[{neurons_1}]')
+        dropout = reg.select_dropout(dropout_opt)
+        model, hist, all_scores = t.do_training_runs(d, cfg, 0, dropout)
+        outputs = model.predict(x_test)
 
     t.serialize_results(y_test.flatten(), outputs.flatten(), cfg)
