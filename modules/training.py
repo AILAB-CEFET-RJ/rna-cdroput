@@ -101,14 +101,43 @@ def neural_network(cfg, dropout=None):
     return model
 
 
-def runGradientBoost(x_train, y_train, x_test, params):
+def runGradientBoost(x_train, y_train, params):
   reg = ensemble.GradientBoostingRegressor(**params)
-
-  start = time.time()
   reg.fit(x_train, y_train)
-  finish = time.time()
-  print('Training time: {:.5f}'.format(finish - start))
 
-  out = reg.predict(x_test)
+  return reg
 
-  return out
+
+def do_xgbr_training_runs(d, cfg, params):
+    print(f'Using device: {cfg.device_name}')
+    with tf.device(cfg.device_name):
+        mses = np.array([])
+        maes = np.array([])
+        rmses = np.array([])
+        r2s = np.array([])
+
+        for i in range(cfg.num_runs):
+            print('***Run #%d***' % i)
+            model = runGradientBoost(d.x_train, d.y_train, params)
+            outputs = model.predict(d.x_test)
+
+            mse = mean_squared_error(d.y_test, outputs)
+            mae = mean_absolute_error(d.y_test, outputs)
+            rmse = sqrt(mse)
+            r2 = r2_score(d.y_test, outputs)
+
+            mses = np.append(mses, mse)
+            maes = np.append(maes, mae)
+            rmses = np.append(rmses, rmse)
+            r2s = np.append(r2s, r2)
+
+        print('================ ARGS USED ===================')
+        print(cfg.args)
+        print('================ RESULTS ===================')
+        print(f"Results after {cfg.num_runs} [lr: {cfg.learning_rate}]")
+        print(f"MSE  {mses.mean():.4f}±{mses.std():.4f}")
+        print(f"MAE  {maes.mean():.4f}±{maes.std():.4f}")
+        print(f"RMSE {rmses.mean():.4f}±{rmses.std():.4f}")
+        print(f"R2   {r2s.mean():.4f}±{r2s.std():.4f}")
+
+        return model

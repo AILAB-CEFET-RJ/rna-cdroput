@@ -122,9 +122,9 @@ if __name__ == '__main__':
                   'loss': 'ls',
                   'random_state': 0
                   }
-        outputs = t.runGradientBoost(x_train, y_train, x_test, params)
-        mse = mean_squared_error(y_test, outputs)
-        print("MSE on test set: {:.5f}".format(mse))
+        model = t.do_xgbr_training_runs(d, cfg, params)
+        outputs = model.predict(x_test)
+
     else:
         print("## Run ANN ##")
         print(f'dim: {D} for hl_0[{neurons_0}], hl_1[{neurons_1}]')
