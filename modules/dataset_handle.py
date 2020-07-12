@@ -44,14 +44,14 @@ def build_dataset(dataframe, num_features, scaler, norm=False):
     x_val_ugriz = scaler.transform(x_val_ugriz)
     x_test_ugriz = scaler.transform(x_test_ugriz)
 
-  if chunks == 2:
-    x_train = np.hstack((x_train_ugriz, x_train_errs))
-    x_val = np.hstack((x_val_ugriz, x_val_errs))
-    x_test = np.hstack((x_test_ugriz, x_test_errs))
-  else:
-    x_train = np.hstack((x_train_ugriz, x_train_errs, x_train_experrs))
-    x_val = np.hstack((x_val_ugriz, x_val_errs, x_val_experrs))
-    x_test = np.hstack((x_test_ugriz, x_test_errs, x_test_experrs))
+    if chunks == 2:
+      x_train = np.hstack((x_train_ugriz, x_train_errs))
+      x_val = np.hstack((x_val_ugriz, x_val_errs))
+      x_test = np.hstack((x_test_ugriz, x_test_errs))
+    else:
+      x_train = np.hstack((x_train_ugriz, x_train_errs, x_train_experrs))
+      x_val = np.hstack((x_val_ugriz, x_val_errs, x_val_experrs))
+      x_test = np.hstack((x_test_ugriz, x_test_errs, x_test_experrs))
 
   return x_train, y_train, x_test, y_test, x_val, y_val, scaler
 
