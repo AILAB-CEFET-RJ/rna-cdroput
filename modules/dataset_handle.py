@@ -53,7 +53,7 @@ def build_dataset(dataframe, num_features, scaler, norm=False):
     x_val = np.hstack((x_val_ugriz, x_val_errs, x_val_experrs))
     x_test = np.hstack((x_test_ugriz, x_test_errs, x_test_experrs))
 
-  return x_train, y_train, x_test, y_test, x_val, y_val
+  return x_train, y_train, x_test, y_test, x_val, y_val, scaler
 
 
 def load_dataframe(dataset_name):

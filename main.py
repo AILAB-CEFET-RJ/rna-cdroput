@@ -102,7 +102,7 @@ if __name__ == '__main__':
         print('# process_isotonic_regression in dataframe')
         df = t.process_isotonic_regression(df, num_features)
 
-    x_train, y_train, x_test, y_test, x_val, y_val = dh.build_dataset(df, num_features, scaler_to_use, norm=True)
+    x_train, y_train, x_test, y_test, x_val, y_val, scaler = dh.build_dataset(df, num_features, scaler_to_use, norm=True)
 
     print('x_train.shape: ', x_train.shape)
     print('x_test.shape: ', x_test.shape)
