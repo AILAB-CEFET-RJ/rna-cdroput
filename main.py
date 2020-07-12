@@ -95,7 +95,14 @@ if __name__ == '__main__':
     dh.download_data(dataset_name)
     df = dh.load_dataframe(dataset_name)
     scaler_to_use = reg.select_scaler(scaler_opt)
-    x_train, y_train, x_test, y_test, x_val, y_val, scaler = dh.build_dataset(df, num_features, scaler_to_use, norm=True)
+
+    dh.filter_col(df)
+
+    if dropout_opt == 'ErrorBasedDropoutIR':
+        print('# process_isotonic_regression in dataframe')
+        df = t.process_isotonic_regression(df, num_features)
+
+    x_train, y_train, x_test, y_test, x_val, y_val = dh.build_dataset(df, num_features, scaler_to_use, norm=True)
 
     print('x_train.shape: ', x_train.shape)
     print('x_test.shape: ', x_test.shape)

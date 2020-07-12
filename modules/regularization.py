@@ -1,5 +1,6 @@
 import tensorflow as tf
 from tensorflow.keras.layers import Dropout
+from tensorflow.keras.layers import Layer
 from tensorflow.python.keras.utils import tf_utils
 from tensorflow.python.ops import array_ops
 
@@ -15,6 +16,9 @@ def select_dropout(dropout_opt):
         return DropoutErrorBased()
     if dropout_opt == 'ErrorBasedDropoutZero':
         return ErrorBasedDropoutZero()
+    if dropout_opt == 'ErrorBasedDropoutIR':
+        return ErrorBasedDropoutIR()
+
 
 
 def select_scaler(scaler_opt):
@@ -77,7 +81,7 @@ class DropoutErrorBased(Dropout):
         return output
 
 
-class ErrorBasedDropoutZero(tf.keras.layers.Layer):
+class ErrorBasedDropoutZero(Layer):
     def __init__(self, **kwargs):
         super(ErrorBasedDropoutZero, self).__init__(**kwargs)
         print('successfuly constructed')
@@ -96,6 +100,36 @@ class ErrorBasedDropoutZero(tf.keras.layers.Layer):
           ones = tf.ones(shape=(1,NUM_BANDS),dtype=tf.dtypes.float32)
           #print('ones:', ones)
           keep_probs = tf.math.subtract(ones, l2_norm_errs[0])
+          rnd_unif = tf.random.uniform(shape=(1,NUM_BANDS), dtype=tf.dtypes.float32)
+          mask = tf.math.greater(keep_probs, rnd_unif)
+          casted_mask = tf.cast(mask, dtype=tf.dtypes.float32)
+          masked_input = tf.math.multiply(ugriz, casted_mask)
+          return masked_input
+
+        if training:
+          output = droppedout_ugriz(ugriz, errs)
+        else:
+          output = ugriz
+
+        return output
+
+
+class ErrorBasedDropoutIR(Layer):
+    def __init__(self, **kwargs):
+        super(ErrorBasedDropoutIR, self).__init__(**kwargs)
+        print('ErrorBasedDropoutIR')
+
+    def call(self, inputs, training=None):
+        NUM_BANDS = 5
+        ugriz = inputs[:,:NUM_BANDS]
+        errs = inputs[:,NUM_BANDS:2*NUM_BANDS]
+        expErrs = inputs[:,2*NUM_BANDS:]
+
+        def droppedout_ugriz(ugriz, errs):
+          ones = tf.ones(shape=(1,NUM_BANDS),dtype=tf.dtypes.float32)
+          sfmax = tf.nn.softmax(tf.math.divide(tf.math.subtract(errs, expErrs), errs))
+          keep_probs = tf.math.subtract(ones, sfmax[0])
+          print('keep_probs:', keep_probs)
           rnd_unif = tf.random.uniform(shape=(1,NUM_BANDS), dtype=tf.dtypes.float32)
           mask = tf.math.greater(keep_probs, rnd_unif)
           casted_mask = tf.cast(mask, dtype=tf.dtypes.float32)

@@ -1,9 +1,9 @@
 import numpy as np
 import pandas as pd
-import time
 
 from math import sqrt
 
+from sklearn.isotonic import IsotonicRegression
 from sklearn.metrics import mean_squared_error
 from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import r2_score
@@ -141,3 +141,26 @@ def do_xgbr_training_runs(d, cfg, params):
         print(f"R2   {r2s.mean():.4f}±{r2s.std():.4f}")
 
         return model
+
+
+def process_isotonic_regression(df, feature_num):
+    df_ir_err = df.copy(deep=True)
+    idx = 10
+    for b in 'ugriz':
+        ir, _, _, _ = apply_isotonic_regression(df.copy(), b, b + 'Err')
+        pred = ir.predict(df_ir_err[b])
+        df_ir_err.insert(idx, f"{b}ErrExp", pred, allow_duplicates=True)
+        idx = idx + 1
+
+    return df_ir_err
+
+
+def apply_isotonic_regression(df, mag, magErr):
+  df.sort_values(by=[mag], inplace=True)
+  df = df.reset_index(drop=True)
+  x = df[mag]
+  y = df[magErr]
+  ir = IsotonicRegression()
+  y_expected = ir.fit_transform(x, y)
+
+  return ir, x, y, y_expected

@@ -11,13 +11,19 @@ def remove_col_df(dataframe, col_to_remove):
       dataframe.drop(columns=[c], axis=1,inplace=True)
 
 
-def ugriz_errs_split(x):
-  x_splited = np.hsplit(x, 2)
-  return x_splited[0], x_splited[1]
+def ugriz_errs_split(x, chunks=2):
+  x_splited = np.hsplit(x, chunks)
+  if chunks == 2:
+    return x_splited[0], x_splited[1], [[]]
+  else:
+    return x_splited[0], x_splited[1], x_splited[2]
+
+
+def filter_col(dataframe):
+  remove_col_df(dataframe, ('ID', '#ID', 'redshiftErr'))
 
 
 def build_dataset(dataframe, num_features, scaler, norm=False):
-  remove_col_df(dataframe, ('ID', '#ID', 'redshiftErr'))
   all_data = dataframe.to_numpy()
   x = all_data[:,0:(num_features)]
   y = all_data[:,-1]
@@ -25,20 +31,29 @@ def build_dataset(dataframe, num_features, scaler, norm=False):
   x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=42)
   x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=0.2, random_state=42)
 
-  x_train_ugriz, x_train_errs = ugriz_errs_split(x_train)
-  x_val_ugriz, x_val_errs = ugriz_errs_split(x_val)
-  x_test_ugriz, x_test_errs = ugriz_errs_split(x_test)
+  chunks = 2
+  if num_features > 10:
+    chunks = 3
+
+  x_train_ugriz, x_train_errs, x_train_experrs = ugriz_errs_split(x_train, chunks)
+  x_val_ugriz, x_val_errs, x_val_experrs = ugriz_errs_split(x_val, chunks)
+  x_test_ugriz, x_test_errs, x_test_experrs = ugriz_errs_split(x_test, chunks)
 
   if scaler != None:
     x_train_ugriz = scaler.fit_transform(x_train_ugriz)
     x_val_ugriz = scaler.transform(x_val_ugriz)
     x_test_ugriz = scaler.transform(x_test_ugriz)
 
-  x_train = np.hstack((x_train_ugriz, x_train_errs))
-  x_val = np.hstack((x_val_ugriz, x_val_errs))
-  x_test = np.hstack((x_test_ugriz, x_test_errs))
+  if chunks == 2:
+    x_train = np.hstack((x_train_ugriz, x_train_errs))
+    x_val = np.hstack((x_val_ugriz, x_val_errs))
+    x_test = np.hstack((x_test_ugriz, x_test_errs))
+  else:
+    x_train = np.hstack((x_train_ugriz, x_train_errs, x_train_experrs))
+    x_val = np.hstack((x_val_ugriz, x_val_errs, x_val_experrs))
+    x_test = np.hstack((x_test_ugriz, x_test_errs, x_test_experrs))
 
-  return x_train, y_train, x_test, y_test, x_val, y_val, scaler
+  return x_train, y_train, x_test, y_test, x_val, y_val
 
 
 def load_dataframe(dataset_name):
