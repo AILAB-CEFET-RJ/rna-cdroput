@@ -143,11 +143,11 @@ def do_xgbr_training_runs(d, cfg, params):
         return model
 
 
-def process_isotonic_regression(df, feature_num):
+def process_isotonic_regression(df, e_sufix = '', e_prefix = ''):
     df_ir_err = df.copy(deep=True)
     idx = 10
     for b in 'ugriz':
-        ir, _, _, _ = apply_isotonic_regression(df.copy(), b, b + 'Err')
+        ir, _, _, _ = apply_isotonic_regression(df.copy(), b, e_prefix + b + e_sufix)
         pred = ir.predict(df_ir_err[b])
         df_ir_err.insert(idx, f"{b}ErrExp", pred, allow_duplicates=True)
         idx = idx + 1

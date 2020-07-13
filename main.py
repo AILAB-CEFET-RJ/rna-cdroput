@@ -100,7 +100,10 @@ if __name__ == '__main__':
 
     if dropout_opt == 'ErrorBasedDropoutIR':
         print('# process_isotonic_regression in dataframe')
-        df = t.process_isotonic_regression(df, num_features)
+        if dataset_name == 'kaggle_bkp':
+            df = t.process_isotonic_regression(df, '', 'modelmagerr_')
+        else:
+            df = t.process_isotonic_regression(df,'Err', '')
 
     x_train, y_train, x_test, y_test, x_val, y_val, scaler = dh.build_dataset(df, num_features, scaler_to_use, norm=True)
 
