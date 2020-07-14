@@ -41,7 +41,12 @@ def build_cfg(D, neurons_0, neurons_1, learning_rate, epochs, num_runs, args):
         monitor='val_loss', mode='min', filepath=best_weights_filepath, save_best_only=True
     )
 
-    callbacks = [early_stopping, mcp_save]
+    if args.noes:
+        print("early_stopping is disabled")
+        callbacks = [mcp_save]
+    else:
+        callbacks = [early_stopping, mcp_save]
+
     device_name = tf.test.gpu_device_name()
 
     if args.gpu:
@@ -72,6 +77,8 @@ def parser():
    parser.add_argument('-dataset', metavar='DS', help='Dataset to use [teddy|happy|kaggle|kaggle_bkp].')
    parser.add_argument('-gpu', metavar='DEVICE', help='GPU device name. Default is device name position 0.')
    parser.add_argument('-xgbr', action='store_true', help='Run XGBoostRegressor instead of ANN.')
+   parser.add_argument('-noes', action='store_true', help='Disable early stop.')
+
 
    return parser
 
