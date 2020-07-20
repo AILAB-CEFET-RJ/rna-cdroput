@@ -8,13 +8,19 @@ Machine Learning methods to improve cosmological redshifts estimation.
 ### Requirements
 Requires Python 3.6+ to run.
 
-All project dependency are in requirements file.
+All project dependency are in `requirements.txt` file.
+
+To install all dependencies, run as follows
+
+```shell script
+$ pip install -r requirements.txt
+```
 
 ### Usage
 The `main.py` file is the entrypoint script.
 
 For help, run
-`main.py -h` 
+`$ main.py -h` 
 
 Output for this command shows as follows
 
@@ -44,7 +50,7 @@ optional arguments:
 ##### ANN with Kalggle dataset Example
 In this example, we train a Neural network with 
 ```shell script
-main.py -e 2 -dp ErrorBasedDropoutIR -sc StandardScaler -runs 2 -lr 0.001 -f 10 -dataset kaggle_bkp
+$ main.py -e 2 -dp ErrorBasedDropoutIR -sc StandardScaler -runs 2 -lr 0.001 -f 10 -dataset kaggle_bkp
 ```
 ##### XGBoost Regressor with COIN:Teddy Example
 
