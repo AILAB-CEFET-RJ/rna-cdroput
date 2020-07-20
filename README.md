@@ -3,6 +3,7 @@ Machine Learning methods for cosmological redshift estimation.
 
 ### Datasets
 This project uses the public Kaggle and COIN(Happy/Teddy) datasets.
+
 All datasets are dowloaded from the public source and saved loacally.
 
 ### Experiments
@@ -50,12 +51,13 @@ optional arguments:
 The available argument options are teddy, happy, kaggle and kaggle_bkp.
 
 ##### Dropout implementation Options [-dp]
-Provide the Droupout implematation class to use. In this project we have the particular `A` and `B` Dropout classes.
-Provide ´none´ as argument to disable Dropout layer.
+Provide the Droupout implematation class to use. In this project we have the particular `ErrorBasedDropoutIR` and `ErrorBasedDropoutZero` Dropout classes.
+Provide `none` as argument to disable Dropout layer.
+[ ... describe each impl ... ]
 
 ##### Scaler implementation Options [-sc]
-Provide the Scaler implematation class to use. In this project we have the particular `A` and `B` Scaler classes.
-Provide ´none´ as argument to disable the scaler.
+Provide the Scaler implematation class to use.
+Provide `none` as argument to disable the scaler.
 
 
 ### Run
