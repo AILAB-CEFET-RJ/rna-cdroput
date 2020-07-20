@@ -1,14 +1,15 @@
 ## ANN Custom Dropout
-Machine Learning methods to improve cosmological redshifts estimation.
+Machine Learning methods for cosmological redshift estimation.
 
 ### Datasets
+This project uses the public Kaggle and COIN(Happy/Teddy) datasets.
+All datasets are dowloaded from the public source and saved loacally.
 
 ### Experiments
+[ ... describe all experiments executed in paper (run_all.sh)  ... ]
 
 ### Requirements
-Requires Python 3.6+ to run.
-
-All project dependency are in `requirements.txt` file.
+Requires Python 3.6+ to run and all project dependencies are in `requirements.txt` file.
 
 To install all dependencies, run as follows
 
@@ -45,14 +46,36 @@ optional arguments:
 ```
 ### Arguments
 
+##### Datasets Options [-dataset]
+The available argument options are teddy, happy, kaggle and kaggle_bkp.
+
+##### Dropout implementation Options [-dp]
+Provide the Droupout implematation class to use. In this project we have the particular `A` and `B` Dropout classes.
+Provide ´none´ as argument to disable Dropout layer.
+
+##### Scaler implementation Options [-sc]
+Provide the Scaler implematation class to use. In this project we have the particular `A` and `B` Scaler classes.
+Provide ´none´ as argument to disable the scaler.
+
+
 ### Run
+To run a single experiment to estimate redshifts, run as follows in subsections bellow.
 
 ##### ANN with Kalggle dataset Example
 In this example, we train a Neural network with 
 ```shell script
-$ main.py -e 2 -dp ErrorBasedDropoutIR -sc StandardScaler -runs 2 -lr 0.001 -f 10 -dataset kaggle_bkp
+$ main.py -e 50 -dp ErrorBasedDropoutIR -sc StandardScaler -runs 3 -lr 0.001 -f 10 -dataset kaggle_bkp
 ```
 ##### XGBoost Regressor with COIN:Teddy Example
+
+##### Run in batch
+You can use the `run_all.sh` to setup a batch run of many experiments. 
+Edit this file to customize the experiments as you wish.
+
+Finally, run as follows
+```shell script
+$ ./run_all.sh
+```
 
 
 ### Citation
