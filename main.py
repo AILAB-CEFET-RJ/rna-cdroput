@@ -67,7 +67,7 @@ def build_cfg(D, neurons_0, neurons_1, learning_rate, epochs, num_runs, args):
 
 
 def parser():
-   parser = argparse.ArgumentParser(description='RNA Experiments')
+   parser = argparse.ArgumentParser(description='ANN Experiments')
    parser.add_argument('-e', metavar='EPOCHS', type=int, help='Epochs.')
    parser.add_argument('-dp', metavar='DROPOUT', help='Dropout class to use.')
    parser.add_argument('-sc', metavar='SCALER', help='Scaler class to use.')
