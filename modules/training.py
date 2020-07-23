@@ -27,7 +27,7 @@ def serialize_results(real, pred, cfg):
 
 
 def serialize(hist, cfg, i):
-    dump_file = f"hist_run_{i}_{cfg.args.dp}_{cfg.args.sc}_{cfg.args.dataset}"
+    dump_file = f"hist_{cfg.args.dp}_{cfg.args.sc}_{cfg.args.dataset}_run_{i}"
     pd.DataFrame.from_dict(hist.history).to_csv(dump_file, index=False)
     print(f"Hist[{dump_file}] dumped!")
 
