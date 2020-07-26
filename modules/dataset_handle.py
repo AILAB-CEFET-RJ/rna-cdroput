@@ -35,23 +35,27 @@ def build_dataset(dataframe, num_features, scaler, norm=False):
   if num_features > 10:
     chunks = 3
 
-  x_train_ugriz, x_train_errs, x_train_experrs = ugriz_errs_split(x_train, chunks)
-  x_val_ugriz, x_val_errs, x_val_experrs = ugriz_errs_split(x_val, chunks)
-  x_test_ugriz, x_test_errs, x_test_experrs = ugriz_errs_split(x_test, chunks)
+  if num_features > 5:
+    x_train_ugriz, x_train_errs, x_train_experrs = ugriz_errs_split(x_train, chunks)
+    x_val_ugriz, x_val_errs, x_val_experrs = ugriz_errs_split(x_val, chunks)
+    x_test_ugriz, x_test_errs, x_test_experrs = ugriz_errs_split(x_test, chunks)
 
-  if scaler != None:
-    x_train_ugriz = scaler.fit_transform(x_train_ugriz)
-    x_val_ugriz = scaler.transform(x_val_ugriz)
-    x_test_ugriz = scaler.transform(x_test_ugriz)
+    if scaler != None:
+      x_train_ugriz = scaler.fit_transform(x_train_ugriz)
+      x_val_ugriz = scaler.transform(x_val_ugriz)
+      x_test_ugriz = scaler.transform(x_test_ugriz)
 
     if chunks == 2:
-      x_train = np.hstack((x_train_ugriz, x_train_errs))
-      x_val = np.hstack((x_val_ugriz, x_val_errs))
-      x_test = np.hstack((x_test_ugriz, x_test_errs))
+        x_train = np.hstack((x_train_ugriz, x_train_errs))
+        x_val = np.hstack((x_val_ugriz, x_val_errs))
+        x_test = np.hstack((x_test_ugriz, x_test_errs))
     else:
-      x_train = np.hstack((x_train_ugriz, x_train_errs, x_train_experrs))
-      x_val = np.hstack((x_val_ugriz, x_val_errs, x_val_experrs))
-      x_test = np.hstack((x_test_ugriz, x_test_errs, x_test_experrs))
+        x_train = np.hstack((x_train_ugriz, x_train_errs, x_train_experrs))
+        x_val = np.hstack((x_val_ugriz, x_val_errs, x_val_experrs))
+        x_test = np.hstack((x_test_ugriz, x_test_errs, x_test_experrs))
+  else:
+    if scaler != None:
+      x_train = scaler.fit_transform(x_train)
 
   return x_train, y_train, x_test, y_test, x_val, y_val, scaler
 
