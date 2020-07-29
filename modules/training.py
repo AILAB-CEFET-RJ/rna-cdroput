@@ -1,9 +1,9 @@
 import numpy as np
 import pandas as pd
 import os
-import time
 
 from math import sqrt
+from time import sleep
 
 from sklearn.isotonic import IsotonicRegression
 from sklearn.metrics import mean_squared_error
@@ -15,6 +15,7 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 
+MODEL_FILE = 'model_weights.hdf5'
 
 def serialize_results(real, pred, cfg):
     data = np.array([real, pred], dtype='float32').T
@@ -34,18 +35,28 @@ def serialize(hist, cfg, i):
     print(f"Hist[{dump_file}] dumped!")
 
 
-def get_best_model_file():
-    models = []
-    for file in os.listdir("."):
-        if file.endswith(".hdf5"):
-            file_date = time.ctime(os.path.getctime(file))
-            models.append([file, file_date])
-
-    models = np.sort(np.array(models), axis=1)
-    m = models[0][1]
+def get_best_model(data):
+    print(f'Models: {data}')
+    data = sorted(data, key=lambda k: k['mse'])
+    m = data[0]
     print(f'Model file load: {m}')
 
-    return m
+    return tf.keras.models.load_model(m['file'])
+
+
+def wait_model_dump():
+    print('... dump model wait')
+    tries = 0
+    while not os.path.exists(MODEL_FILE):
+        if tries == 10:
+            print('Give up !! Proceed with current model !!')
+            print('Epoch generates worst model !!')
+            return False
+        print('.', end='')
+        sleep(1)
+        tries = tries + 1
+    print('dump model done!')
+    return True
 
 
 def do_training_runs(d, cfg, verbose=0, customized_dropout=None):
@@ -56,6 +67,7 @@ def do_training_runs(d, cfg, verbose=0, customized_dropout=None):
         maes = np.array([])
         rmses = np.array([])
         r2s = np.array([])
+        model_data = np.array([])
 
         for i in range(cfg.num_runs):
             print('***Run #%d***' % i)
@@ -66,18 +78,31 @@ def do_training_runs(d, cfg, verbose=0, customized_dropout=None):
                             verbose = verbose,
                             callbacks = cfg.callbacks)
 
-            best_model = tf.keras.models.load_model('model_weights.hdf5')
-            os.system(f'mv model_weights.hdf5 model_weights_{cfg.args.sc}_{cfg.args.dp}_{cfg.epochs}_run{i}.hdf5')
+            dumped = wait_model_dump()
 
-            scores = best_model.evaluate(d.x_test, d.y_test, verbose=0)
+            if dumped:
+                best_model = tf.keras.models.load_model(MODEL_FILE)
+                model = best_model
+                best_model_filename = f'model_weights_{cfg.args.sc}_{cfg.args.dp}_{cfg.epochs}_run{i}.hdf5'
+                cmd = f'mv {MODEL_FILE} {best_model_filename}'
+                os.system(cmd)
+
+            scores = model.evaluate(d.x_test, d.y_test, verbose=0)
             print('Scores (loss, mse, mae) for run %d: %s' % (i, scores))
             all_scores = np.vstack((all_scores, scores))
 
-            outputs = best_model.predict(d.x_test)
+            outputs = model.predict(d.x_test)
             mse = mean_squared_error(d.y_test, outputs)
             mae = mean_absolute_error(d.y_test, outputs)
             rmse = sqrt(mse)
             r2 = r2_score(d.y_test, outputs)
+
+            if dumped:
+                model_record = {
+                    'file': best_model_filename,
+                    'mse': mse, 'r2': r2
+                }
+                model_data = np.append(model_data, model_record)
 
             mses = np.append(mses, mse)
             maes = np.append(maes, mae)
@@ -99,7 +124,8 @@ def do_training_runs(d, cfg, verbose=0, customized_dropout=None):
         print(f"RMSE {rmses.mean():.4f}±{rmses.std():.4f}")
         print(f"R2   {r2s.mean():.4f}±{r2s.std():.4f}")
 
-        return model, hist, all_scores
+        all_runs_best_model = get_best_model(model_data)
+        return all_runs_best_model, hist, all_scores
 
 
 def neural_network(cfg, dropout=None):
