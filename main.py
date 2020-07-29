@@ -4,8 +4,6 @@ import argparse
 
 from numpy.random import seed
 
-from sklearn.metrics import mean_squared_error
-
 import tensorflow as tf
 from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.callbacks import ModelCheckpoint

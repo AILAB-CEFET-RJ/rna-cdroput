@@ -1,5 +1,7 @@
 import numpy as np
 import pandas as pd
+import os
+import time
 
 from math import sqrt
 
@@ -32,6 +34,20 @@ def serialize(hist, cfg, i):
     print(f"Hist[{dump_file}] dumped!")
 
 
+def get_best_model_file():
+    models = []
+    for file in os.listdir("."):
+        if file.endswith(".hdf5"):
+            file_date = time.ctime(os.path.getctime(file))
+            models.append([file, file_date])
+
+    models = np.sort(np.array(models), axis=1)
+    m = models[0][1]
+    print(f'Model file load: {m}')
+
+    return m
+
+
 def do_training_runs(d, cfg, verbose=0, customized_dropout=None):
     print(f'Using device: {cfg.device_name}')
     with tf.device(cfg.device_name):
@@ -49,11 +65,15 @@ def do_training_runs(d, cfg, verbose=0, customized_dropout=None):
                             epochs = cfg.epochs,
                             verbose = verbose,
                             callbacks = cfg.callbacks)
-            scores = model.evaluate(d.x_test, d.y_test, verbose=0)
+
+            best_model = tf.keras.models.load_model('model_weights.hdf5')
+            os.system(f'mv model_weights.hdf5 model_weights_{cfg.args.sc}_{cfg.args.dp}_{cfg.epochs}_run{i}.hdf5')
+
+            scores = best_model.evaluate(d.x_test, d.y_test, verbose=0)
             print('Scores (loss, mse, mae) for run %d: %s' % (i, scores))
             all_scores = np.vstack((all_scores, scores))
 
-            outputs = model.predict(d.x_test)
+            outputs = best_model.predict(d.x_test)
             mse = mean_squared_error(d.y_test, outputs)
             mae = mean_absolute_error(d.y_test, outputs)
             rmse = sqrt(mse)
