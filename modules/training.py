@@ -15,7 +15,19 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 
+from modules.regularization import ErrorBasedDropoutIR
+from modules.regularization import ErrorBasedDropoutZero
+
+
 MODEL_FILE = 'model_weights.hdf5'
+
+
+def custom_layer_register():
+    return {
+        "ErrorBasedDropoutIR": ErrorBasedDropoutIR,
+        "ErrorBasedDropoutZero": ErrorBasedDropoutZero
+    }
+
 
 def serialize_results(real, pred, cfg):
     data = np.array([real, pred], dtype='float32').T
@@ -41,7 +53,8 @@ def get_best_model(data):
     m = data[0]
     print(f'Model file load: {m}')
 
-    return tf.keras.models.load_model(m['file'])
+    with keras.utils.custom_object_scope(custom_layer_register()):
+        return tf.keras.models.load_model(m['file'])
 
 
 def wait_model_dump():
@@ -81,7 +94,9 @@ def do_training_runs(d, cfg, verbose=0, customized_dropout=None):
             dumped = wait_model_dump()
 
             if dumped:
-                best_model = tf.keras.models.load_model(MODEL_FILE)
+                with keras.utils.custom_object_scope(custom_layer_register()):
+                    best_model = tf.keras.models.load_model(MODEL_FILE)
+
                 model = best_model
                 best_model_filename = f'model_weights_{cfg.args.sc}_{cfg.args.dp}_{cfg.epochs}_run{i}.hdf5'
                 cmd = f'mv {MODEL_FILE} {best_model_filename}'
