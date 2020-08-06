@@ -2,6 +2,8 @@ import os
 import pandas as pd
 import numpy as np
 import requests
+import gdown
+
 from sklearn.model_selection import train_test_split
 
 
@@ -20,10 +22,10 @@ def ugriz_errs_split(x, chunks=2):
 
 
 def filter_col(dataframe):
-  remove_col_df(dataframe, ('ID', '#ID', 'redshiftErr'))
+  remove_col_df(dataframe, ('ID', '#ID', 'redshiftErr','objid', 'specobjid'))
 
 
-def build_dataset(dataframe, num_features, scaler, norm=False):
+def build_dataset(dataframe, num_features, scaler):
   all_data = dataframe.to_numpy()
   x = all_data[:,0:(num_features)]
   y = all_data[:,-1]
@@ -70,18 +72,42 @@ def load_dataframe(dataset_name):
   if dataset_name == 'kaggle' or dataset_name == 'kaggle_bkp':
     return pd.read_csv('kaggle_train_data.csv')
 
+  if dataset_name == 'sdss':
+    return pd.read_csv('sdss_train_data.csv', comment="#")
+
   return None
 
 
 def download_data(dataset_name):
   if dataset_name == 'teddy':
-    download_teddy()
+    if os.path.isfile('teddy_train_data'):
+      print("Dataset Found!")
+    else:
+      download_teddy()
+
   if dataset_name == 'happy':
-    download_happy()
+    if os.path.isfile('happy_train_data'):
+      print("Dataset Found!")
+    else:
+      download_happy()
+
   if dataset_name == 'kaggle':
-    download_kaggle()
+    if os.path.isfile('kaggle_train_data.csv'):
+      print("Dataset Found!")
+    else:
+      download_kaggle()
+
   if dataset_name == 'kaggle_bkp':
-    download_kaggle_alternative()
+    if os.path.isfile('kaggle_train_data.csv'):
+      print("Dataset Found!")
+    else:
+      download_kaggle_alternative()
+
+  if dataset_name == 'sdss':
+    if os.path.isfile('sdss_train_data.csv'):
+      print("Dataset Found!")
+    else:
+      download_sdss_alternative()
 
 
 def download_teddy():
@@ -100,6 +126,12 @@ def download_kaggle():
   os.system('unzip -u train.zip')
   os.system('mv train.csv kaggle_train_data.csv')
 
+
+def download_sdss_alternative():
+  id = '1m94kP0q9MycenPDBvtvrRSW_E2AsdsFl'
+  url = f"https://drive.google.com/uc?id={id}"
+  output = 'sdss_train_data.csv'
+  gdown.download(url, output, quiet=False)
 
 def download_kaggle_alternative():
   def download_file_from_google_drive(id):
