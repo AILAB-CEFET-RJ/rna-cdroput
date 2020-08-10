@@ -128,7 +128,7 @@ def download_kaggle():
 
 
 def download_sdss_alternative():
-  id = '1m94kP0q9MycenPDBvtvrRSW_E2AsdsFl'
+  id = '1i5fFrVlVkfRvFMBYzYbE_whLfSTz5fYe'
   url = f"https://drive.google.com/uc?id={id}"
   output = 'sdss_train_data.csv'
   gdown.download(url, output, quiet=False)
