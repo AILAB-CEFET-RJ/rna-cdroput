@@ -76,7 +76,7 @@ def parser():
    parser.add_argument('-gpu', metavar='DEVICE', help='GPU device name. Default is device name position 0.')
    parser.add_argument('-xgbr', action='store_true', help='Run XGBoostRegressor instead of ANN.')
    parser.add_argument('-noes', action='store_true', help='Disable early stop.')
-
+   parser.add_argument('-subs', metavar='SIZE', type=int, help='Subsample size. If pass, dataset full size will be used.')
 
    return parser
 
@@ -93,6 +93,7 @@ if __name__ == '__main__':
     num_features = args.f
     scaler_opt = args.sc
     xgboost = args.xgbr
+    subsample = args.subs
 
     seed(42)
     tf.random.set_seed(42)
@@ -110,7 +111,7 @@ if __name__ == '__main__':
         else:
             df = t.process_isotonic_regression(df,'Err', '')
 
-    x_train, y_train, x_test, y_test, x_val, y_val, scaler = dh.build_dataset(df, num_features, scaler_to_use)
+    x_train, y_train, x_test, y_test, x_val, y_val, scaler = dh.build_dataset(df, num_features, scaler_to_use, subsample)
 
     print('x_train.shape: ', x_train.shape)
     print('x_test.shape: ', x_test.shape)

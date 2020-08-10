@@ -25,7 +25,15 @@ def filter_col(dataframe):
   remove_col_df(dataframe, ('ID', '#ID', 'redshiftErr','objid', 'specobjid'))
 
 
-def build_dataset(dataframe, num_features, scaler):
+def build_dataset(dataframe, num_features, scaler, subsample):
+
+  if subsample is not None:
+    subs_dataframe = dataframe.sample(n=subsample, random_state=42)
+    print(f"Using subsample {subs_dataframe.shape[0]} of {dataframe.shape[0]}.")
+    dataframe = subs_dataframe
+  else:
+    print(f"Using full sample {dataframe.shape[0]}.")
+
   all_data = dataframe.to_numpy()
   x = all_data[:,0:(num_features)]
   y = all_data[:,-1]
