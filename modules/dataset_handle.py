@@ -22,7 +22,7 @@ def ugriz_errs_split(x, chunks=2):
 
 
 def filter_col(dataframe):
-  remove_col_df(dataframe, ('ID', '#ID', 'redshiftErr','objid', 'specobjid'))
+  remove_col_df(dataframe, ('ID', '#ID', 'redshiftErr','objid', 'specobjid', 'class'))
 
 
 def build_dataset(dataframe, num_features, scaler, subsample):
