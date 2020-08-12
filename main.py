@@ -77,6 +77,7 @@ def parser():
    parser.add_argument('-xgbr', action='store_true', help='Run XGBoostRegressor instead of ANN.')
    parser.add_argument('-noes', action='store_true', help='Disable early stop.')
    parser.add_argument('-subs', metavar='SIZE', type=int, help='Subsample size. If pass, dataset full size will be used.')
+   parser.add_argument('-rmne', action='store_true', help='Remove negative magnitude entries.')
 
    return parser
 
@@ -104,6 +105,16 @@ if __name__ == '__main__':
 
     dh.filter_col(df)
 
+    if subsample is not None:
+        subs_df = df.sample(n=subsample, random_state=42)
+        print(f"Using subsample {subs_df.shape[0]} of {df.shape[0]}.")
+        df = subs_df
+    else:
+        print(f"Using full sample {df.shape[0]}.")
+
+    if args.rmne:
+        df = dh.filter_negative_redshift(df)
+
     if dropout_opt == 'ErrorBasedDropoutIR':
         print('# process_isotonic_regression in dataframe')
         if dataset_name == 'kaggle_bkp':
@@ -113,7 +124,7 @@ if __name__ == '__main__':
         else:
             df = t.process_isotonic_regression(df,'Err', '')
 
-    x_train, y_train, x_test, y_test, x_val, y_val, scaler = dh.build_dataset(df, num_features, scaler_to_use, subsample)
+    x_train, y_train, x_test, y_test, x_val, y_val, scaler = dh.build_dataset(df, num_features, scaler_to_use)
 
     print('x_train.shape: ', x_train.shape)
     print('x_test.shape: ', x_test.shape)

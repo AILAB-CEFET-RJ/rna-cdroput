@@ -25,15 +25,20 @@ def filter_col(dataframe):
   remove_col_df(dataframe, ('ID', '#ID', 'redshiftErr','objid', 'specobjid', 'class'))
 
 
-def build_dataset(dataframe, num_features, scaler, subsample):
+def filter_negative_redshift(dataframe):
+  orig = dataframe.shape[0]
+  dataframe = dataframe[dataframe.u > 0]
+  dataframe = dataframe[dataframe.g > 0]
+  dataframe = dataframe[dataframe.r > 0]
+  dataframe = dataframe[dataframe.i > 0]
+  dataframe = dataframe[dataframe.z > 0]
+  clean = dataframe.shape[0]
+  print(f"Negative mags removed: {orig-clean}.")
 
-  if subsample is not None:
-    subs_dataframe = dataframe.sample(n=subsample, random_state=42)
-    print(f"Using subsample {subs_dataframe.shape[0]} of {dataframe.shape[0]}.")
-    dataframe = subs_dataframe
-  else:
-    print(f"Using full sample {dataframe.shape[0]}.")
+  return dataframe
 
+
+def build_dataset(dataframe, num_features, scaler):
   all_data = dataframe.to_numpy()
   x = all_data[:,0:(num_features)]
   y = all_data[:,-1]
