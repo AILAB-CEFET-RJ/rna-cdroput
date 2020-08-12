@@ -108,6 +108,8 @@ if __name__ == '__main__':
         print('# process_isotonic_regression in dataframe')
         if dataset_name == 'kaggle_bkp':
             df = t.process_isotonic_regression(df, '', 'modelmagerr_')
+        elif dataset_name == 'sdss':
+            df = t.process_isotonic_regression(df, '', 'err_')
         else:
             df = t.process_isotonic_regression(df,'Err', '')
 
