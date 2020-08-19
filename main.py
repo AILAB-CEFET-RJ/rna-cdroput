@@ -133,11 +133,7 @@ if __name__ == '__main__':
     N = x_train.shape[0] # number of data points (train)
     D = x_train.shape[1]  # number of features
 
-    neurons_0 = math.ceil(2*D/3)
-    neurons_1 = math.ceil(D/2)
-
     d = build_d(x_train, y_train, x_test, y_test, x_val, y_val)
-    cfg = build_cfg(D, neurons_0, neurons_1, learning_rate, epochs, num_runs, args)
     outputs = {}
 
     if xgboost:
@@ -151,13 +147,22 @@ if __name__ == '__main__':
                   'loss': 'ls',
                   'random_state': 0
                   }
+        cfg = build_cfg(D, 0, 0, learning_rate, epochs, num_runs, args)
         model = t.do_xgbr_training_runs(d, cfg, params)
         outputs = model.predict(x_test)
 
     else:
         print("## Run ANN ##")
-        print(f'dim: {D} for hl_0[{neurons_0}], hl_1[{neurons_1}]')
         dropout = reg.select_dropout(dropout_opt)
+        f = D
+        if dropout:
+            f = 5
+
+        neurons_0 = math.ceil(2 * f / 3)
+        neurons_1 = math.ceil(f / 2)
+        cfg = build_cfg(D, neurons_0, neurons_1, learning_rate, epochs, num_runs, args)
+
+        print(f'input dim:{D}, feature dim: {f} for hl_0[{neurons_0}], hl_1[{neurons_1}]')
         model, hist, all_scores = t.do_training_runs(d, cfg, 0, dropout)
         outputs = model.predict(x_test)
 
