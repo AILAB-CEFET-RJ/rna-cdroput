@@ -18,7 +18,8 @@ def select_dropout(dropout_opt):
         return ErrorBasedDropoutZero()
     if dropout_opt == 'ErrorBasedDropoutIR':
         return ErrorBasedDropoutIR()
-
+    if dropout_opt == 'ErrorBasedDropoutDT':
+        return ErrorBasedDropoutDT()
 
 
 def select_scaler(scaler_opt):
@@ -142,3 +143,8 @@ class ErrorBasedDropoutIR(Layer):
           output = ugriz
 
         return output
+
+class ErrorBasedDropoutDT(ErrorBasedDropoutIR):
+    def __init__(self, **kwargs):
+        super(ErrorBasedDropoutDT, self).__init__(**kwargs)
+        print('ErrorBasedDropoutDT')

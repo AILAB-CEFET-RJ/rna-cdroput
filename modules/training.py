@@ -6,6 +6,7 @@ from math import sqrt
 from time import sleep
 
 from sklearn.isotonic import IsotonicRegression
+from sklearn.tree import DecisionTreeRegressor
 from sklearn.metrics import mean_squared_error
 from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import r2_score
@@ -16,6 +17,7 @@ from tensorflow import keras
 from tensorflow.keras import layers
 
 from modules.regularization import ErrorBasedDropoutIR
+from modules.regularization import ErrorBasedDropoutDT
 from modules.regularization import ErrorBasedDropoutZero
 
 
@@ -25,6 +27,7 @@ MODEL_FILE = 'model_weights.hdf5'
 def custom_layer_register():
     return {
         "ErrorBasedDropoutIR": ErrorBasedDropoutIR,
+        "ErrorBasedDropoutDT": ErrorBasedDropoutDT,
         "ErrorBasedDropoutZero": ErrorBasedDropoutZero
     }
 
@@ -204,11 +207,23 @@ def do_xgbr_training_runs(d, cfg, params):
         return model
 
 
-def process_isotonic_regression(df, e_sufix = '', e_prefix = ''):
+def apply_isotonic_regression(df, dataset_name):
+    print('# process_isotonic_regression in dataframe')
+    if dataset_name == 'kaggle_bkp':
+        df = _process_isotonic_regression(df, '', 'modelmagerr_')
+    elif dataset_name == 'sdss':
+        df = _process_isotonic_regression(df, '', 'err_')
+    else:
+        df = _process_isotonic_regression(df, 'Err', '')
+
+    return df
+
+
+def _process_isotonic_regression(df, e_sufix = '', e_prefix = ''):
     df_ir_err = df.copy(deep=True)
     idx = 10
     for b in 'ugriz':
-        ir, _, _, _ = apply_isotonic_regression(df.copy(), b, e_prefix + b + e_sufix)
+        ir, _, _, _ = _apply_isotonic_regression(df.copy(), b, e_prefix + b + e_sufix)
         pred = ir.predict(df_ir_err[b])
         df_ir_err.insert(idx, f"{b}ErrExp", pred, allow_duplicates=True)
         idx = idx + 1
@@ -216,7 +231,7 @@ def process_isotonic_regression(df, e_sufix = '', e_prefix = ''):
     return df_ir_err
 
 
-def apply_isotonic_regression(df, mag, magErr):
+def _apply_isotonic_regression(df, mag, magErr):
   df.sort_values(by=[mag], inplace=True)
   df = df.reset_index(drop=True)
   x = df[mag]
@@ -225,3 +240,36 @@ def apply_isotonic_regression(df, mag, magErr):
   y_expected = ir.fit_transform(x, y)
 
   return ir, x, y, y_expected
+
+
+def apply_decision_tree_regression(df, dataset_name):
+    print('# process_decision_tree_regression in dataframe')
+    if dataset_name == 'kaggle_bkp':
+        df = _process_decision_tree_regression(df, '', 'modelmagerr_')
+    elif dataset_name == 'sdss':
+        df = _process_decision_tree_regression(df, '', 'err_')
+    else:
+        df = _process_decision_tree_regression(df, 'Err', '')
+
+    return df
+
+
+def _process_decision_tree_regression(df, e_sufix = '', e_prefix = ''):
+    df_dt_err = df.copy()
+    idx = 10
+    for b in 'ugriz':
+        ir, _, _, y_ = _apply_decision_tree_regression(df_dt_err, b, e_prefix + b + e_sufix)
+        df_dt_err.insert(idx, f"{b}ErrExp", y_, allow_duplicates=True)
+        idx = idx + 1
+
+    return df_dt_err
+
+
+def _apply_decision_tree_regression(df, magCol, errCol, max_depth=5):
+    X = df[[magCol]]
+    y = df[[errCol]]
+    regressor = DecisionTreeRegressor(random_state=0, max_depth = max_depth)
+    regressor.fit(X, y)
+    y_expected = regressor.predict(X)
+
+    return regressor, X, y, y_expected

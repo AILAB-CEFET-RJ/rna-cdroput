@@ -116,13 +116,9 @@ if __name__ == '__main__':
         df = dh.filter_negative_redshift(df)
 
     if dropout_opt == 'ErrorBasedDropoutIR':
-        print('# process_isotonic_regression in dataframe')
-        if dataset_name == 'kaggle_bkp':
-            df = t.process_isotonic_regression(df, '', 'modelmagerr_')
-        elif dataset_name == 'sdss':
-            df = t.process_isotonic_regression(df, '', 'err_')
-        else:
-            df = t.process_isotonic_regression(df,'Err', '')
+        df = t.apply_isotonic_regression(df, dataset_name)
+    if dropout_opt == 'ErrorBasedDropoutDT':
+        df = t.apply_decision_tree_regression(df, dataset_name)
 
     x_train, y_train, x_test, y_test, x_val, y_val, scaler = dh.build_dataset(df, num_features, scaler_to_use)
 
