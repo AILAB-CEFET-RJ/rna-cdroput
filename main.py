@@ -78,6 +78,8 @@ def parser():
    parser.add_argument('-noes', action='store_true', help='Disable early stop.')
    parser.add_argument('-subs', metavar='SIZE', type=int, help='Subsample size. If pass, dataset full size will be used.')
    parser.add_argument('-rmne', action='store_true', help='Remove negative magnitude entries.')
+   parser.add_argument('-hl1', metavar='HL1', type=int, help='Force amount of units in hidden layer 1.')
+   parser.add_argument('-hl2', metavar='HL2', type=int, help='Force amount of units in hidden layer 2.')
 
    return parser
 
@@ -156,6 +158,12 @@ if __name__ == '__main__':
 
         neurons_0 = math.ceil(2 * f / 3)
         neurons_1 = math.ceil(f / 2)
+
+        if args.hl1:
+            neurons_0 = args.hl1
+        if args.hl2:
+            neurons_1 = args.hl2
+
         cfg = build_cfg(D, neurons_0, neurons_1, learning_rate, epochs, num_runs, args)
 
         print(f'input dim:{D}, feature dim: {f} for hl_0[{neurons_0}], hl_1[{neurons_1}]')
