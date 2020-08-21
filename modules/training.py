@@ -38,7 +38,7 @@ def serialize_results(real, pred, cfg):
     dump_file = f"real_x_pred_{cfg.args.dp}_{cfg.args.sc}_{cfg.args.dataset}"
 
     if cfg.args.xgbr:
-        dump_file = "XGBR_" + dump_file
+        dump_file = "XGBR" + dump_file
 
     df.to_csv(dump_file, index=False)
     print(f"Result[{dump_file}] dumped!")
