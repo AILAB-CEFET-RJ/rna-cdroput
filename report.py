@@ -112,11 +112,32 @@ def percent_distance_std(pred, real, bins):
 
 
 def gen_img_hist_report(files_dir, dropout, scaler, dataset, metric):
-    file_mask = f"{files_dir}/hist_{dropout}_{scaler}_{dataset}*"
+    file_mask = f"{files_dir}/hist/hist_{dropout}_{scaler}_{dataset}*"
     files = glob.glob(file_mask)
     files.sort()
     best_hist_file = files[-1]
     print(f"######## {best_hist_file.split('/')[-1]} ########")
+    hist = pd.read_csv(best_hist_file)
+    print(hist.info())
+    print(hist.head())
+
+    if metric == None:
+        metric = 'loss'
+
+    fig, ax = plt.subplots()
+    hist[[metric, f"val_{metric}"]].plot.line(ax=ax)
+    plt.show()
+
+
+def gen_img_hist_report2(files_dir, dropout, scaler, dataset, metric):
+    model_file_mask = f"{files_dir}/models/model_weights_{dataset}_{scaler}_{dropout}*"
+    model_files = glob.glob(model_file_mask)
+    model_files.sort()
+    best_model_file = model_files[-1]
+    idx = best_model_file.split('_')[-1].split('.')[0]
+    best_hist_file = glob.glob(f"{files_dir}/hist/hist_{dropout}_{scaler}_{dataset}_run_{idx}")[0]
+    print(f"######## {best_hist_file.split('/')[-1]} ########")
+
     hist = pd.read_csv(best_hist_file)
     print(hist.info())
     print(hist.head())

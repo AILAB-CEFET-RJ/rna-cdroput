@@ -101,7 +101,7 @@ def do_training_runs(d, cfg, verbose=0, customized_dropout=None):
                     best_model = tf.keras.models.load_model(MODEL_FILE)
 
                 model = best_model
-                best_model_filename = f'model_weights_{cfg.args.sc}_{cfg.args.dp}_{cfg.epochs}_run{i}.hdf5'
+                best_model_filename = f'model_weights_{cfg.args.dataset}_{cfg.args.sc}_{cfg.args.dp}_{cfg.epochs}_run_{i}.hdf5'
                 cmd = f'mv {MODEL_FILE} {best_model_filename}'
                 os.system(cmd)
 
