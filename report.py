@@ -2,12 +2,20 @@ import os
 import argparse
 import numpy as np
 import pandas as pd
+import glob
+
+import matplotlib.pyplot as plt
 
 
 def parser():
    parser = argparse.ArgumentParser(description='Reports module')
    parser.add_argument('-dir', metavar='DIR', help='Result file directory.')
    parser.add_argument('-std_perc', action='store_true', help='Report of standard deviations distances.')
+   parser.add_argument('-img_hist', action='store_true', help='Plot of best model learning curves.')
+   parser.add_argument('-metric', metavar='METRIC', help='Select metric to show in [-img_hist]. Default is loss.')
+   parser.add_argument('-dp', metavar='DROPOUT', help='Dropout class used.')
+   parser.add_argument('-sc', metavar='SCALER', help='Scaler class used.')
+   parser.add_argument('-dataset', metavar='DS', help='Dataset to use [teddy|happy|kaggle|kaggle_bkp].')
 
    return parser
 
@@ -103,12 +111,38 @@ def percent_distance_std(pred, real, bins):
     return result
 
 
+def gen_img_hist_report(files_dir, dropout, scaler, dataset, metric):
+    file_mask = f"{files_dir}/hist_{dropout}_{scaler}_{dataset}*"
+    files = glob.glob(file_mask)
+    files.sort()
+    best_hist_file = files[-1]
+    print(f"######## {best_hist_file.split('/')[-1]} ########")
+    hist = pd.read_csv(best_hist_file)
+    print(hist.info())
+    print(hist.head())
+
+    if metric == None:
+        metric = 'loss'
+
+    fig, ax = plt.subplots()
+    hist[[metric, f"val_{metric}"]].plot.line(ax=ax)
+    plt.show()
+
+
 if __name__ == '__main__':
     parser = parser()
     args = parser.parse_args()
 
     files_dir = args.dir
     std_perc_report = args.std_perc
+    img_hist_report = args.img_hist
 
     if std_perc_report:
         gen_std_perc_report(files_dir)
+
+    if img_hist_report:
+        dropout = args.dp
+        scaler = args.sc
+        dataset = args.dataset
+        metric = args.metric
+        gen_img_hist_report(files_dir, dropout, scaler, dataset, metric)
