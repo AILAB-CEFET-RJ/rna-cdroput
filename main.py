@@ -39,11 +39,16 @@ def build_cfg(D, neurons_0, neurons_1, learning_rate, epochs, num_runs, args):
         monitor='val_loss', mode='min', filepath=best_weights_filepath, save_best_only=True
     )
 
+    trace_weights_filepath = os.path.join(model_dir, 'model_trace_weights.hdf5')
+    mcp_trace_save = ModelCheckpoint(
+        monitor='val_loss', mode='min', filepath=trace_weights_filepath
+    )
+
     if args.noes:
         print("early_stopping is disabled")
-        callbacks = [mcp_save]
+        callbacks = [mcp_save, mcp_trace_save]
     else:
-        callbacks = [early_stopping, mcp_save]
+        callbacks = [early_stopping, mcp_save, mcp_trace_save]
 
     device_name = tf.test.gpu_device_name()
 
@@ -80,8 +85,32 @@ def parser():
    parser.add_argument('-rmne', action='store_true', help='Remove negative magnitude entries.')
    parser.add_argument('-hl1', metavar='HL1', type=int, help='Force amount of units in hidden layer 1.')
    parser.add_argument('-hl2', metavar='HL2', type=int, help='Force amount of units in hidden layer 2.')
+   parser.add_argument('-coin_val', metavar='VALSET', help='Use a validation set from COIN data [B|C|D].')
+   parser.add_argument('-m', action='store_true', help='Reload best model trained previously. Skip train phase.')
+   parser.add_argument('-mo', action='store_true', help='Reload all models trained stored previously. Skip train phase.')
 
    return parser
+
+
+def apply_transforms(dataframe, args):
+    df = dataframe
+
+    if args.rmne:
+        df = dh.filter_negative_redshift(df)
+
+    if subsample is not None:
+        subs_df = df.sample(n=subsample, random_state=42)
+        print(f"Using subsample {subs_df.shape[0]} of {df.shape[0]}.")
+        df = subs_df
+    else:
+        print(f"Using full sample {df.shape[0]}.")
+
+    if dropout_opt == 'ErrorBasedDropoutIR':
+        df = t.apply_isotonic_regression(df, dataset_name)
+    if dropout_opt == 'ErrorBasedDropoutDT':
+        df = t.apply_decision_tree_regression(df, dataset_name)
+
+    return df
 
 
 if __name__ == '__main__':
@@ -97,36 +126,31 @@ if __name__ == '__main__':
     scaler_opt = args.sc
     xgboost = args.xgbr
     subsample = args.subs
+    coin_val = args.coin_val
+    skip_training = args.m
+    skip_training_over = args.mo
 
     seed(42)
     tf.random.set_seed(42)
 
-    dh.download_data(dataset_name)
-    df = dh.load_dataframe(dataset_name)
+    dh.download_data(dataset_name, coin_val)
+    df, df_val = dh.load_dataframe(dataset_name, coin_val)
     scaler_to_use = reg.select_scaler(scaler_opt)
 
     dh.filter_col(df)
+    df = apply_transforms(df, args)
 
-    if subsample is not None:
-        subs_df = df.sample(n=subsample, random_state=42)
-        print(f"Using subsample {subs_df.shape[0]} of {df.shape[0]}.")
-        df = subs_df
+    if coin_val:
+        dh.filter_col(df_val)
+        df_val = apply_transforms(df_val, args)
+
+        x_train, y_train, x_test, y_test, x_val, y_val, scaler = dh.build_dataset_coin_data(df, df_val, num_features, scaler_to_use)
     else:
-        print(f"Using full sample {df.shape[0]}.")
-
-    if args.rmne:
-        df = dh.filter_negative_redshift(df)
-
-    if dropout_opt == 'ErrorBasedDropoutIR':
-        df = t.apply_isotonic_regression(df, dataset_name)
-    if dropout_opt == 'ErrorBasedDropoutDT':
-        df = t.apply_decision_tree_regression(df, dataset_name)
-
-    x_train, y_train, x_test, y_test, x_val, y_val, scaler = dh.build_dataset(df, num_features, scaler_to_use)
+        x_train, y_train, x_test, y_test, x_val, y_val, scaler = dh.build_dataset(df, num_features, scaler_to_use)
 
     print('x_train.shape: ', x_train.shape)
-    print('x_test.shape: ', x_test.shape)
     print('x_val.shape: ', x_val.shape)
+    print('x_test.shape: ', x_test.shape)
 
     N = x_train.shape[0] # number of data points (train)
     D = x_train.shape[1]  # number of features
@@ -167,7 +191,20 @@ if __name__ == '__main__':
         cfg = build_cfg(D, neurons_0, neurons_1, learning_rate, epochs, num_runs, args)
 
         print(f'input dim:{D}, feature dim: {f} for hl_0[{neurons_0}], hl_1[{neurons_1}]')
-        model, hist, all_scores = t.do_training_runs(d, cfg, 0, dropout)
+        if skip_training:
+            print("#### SKIP TRAINING ####")
+            model = t.load_model_data(cfg)
+            t.do_scoring(d, cfg, model)
+
+        elif skip_training_over:
+            print("#### SKIP TRAINING ####")
+            models = t.load_trace_models_data(cfg)
+            t.do_scoring_over(d, cfg, models)
+            model = t.load_model_data(cfg)
+
+        else:
+            model, hist, all_scores = t.do_training_runs(d, cfg, 0, dropout)
+
         outputs = model.predict(x_test)
 
-    t.serialize_results(y_test.flatten(), outputs.flatten(), cfg)
+    t.serialize_results(y_test.flatten(), outputs.flatten(), cfg, coin_val)

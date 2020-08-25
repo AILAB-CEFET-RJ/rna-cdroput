@@ -6,6 +6,7 @@ import gdown
 
 from sklearn.model_selection import train_test_split
 
+_val_idx = {"B": 1, "C": 2, "D": 3}
 
 def remove_col_df(dataframe, col_to_remove):
   for c in col_to_remove:
@@ -75,12 +76,54 @@ def build_dataset(dataframe, num_features, scaler):
   return x_train, y_train, x_test, y_test, x_val, y_val, scaler
 
 
-def load_dataframe(dataset_name):
-  if dataset_name == 'teddy':
-    return pd.read_csv('teddy_train_data', comment='#', delim_whitespace=True, names=['ID','u','g','r','i','z','uErr','gErr','rErr','iErr','zErr','redshift','redshiftErr'])
+def build_dataset_coin_data(dataframes, df_val, num_features, scaler):
+  all_train_data = dataframes.to_numpy()
+  x = all_train_data[:,0:(num_features)]
+  y = all_train_data[:,-1]
 
-  if dataset_name == 'happy':
-    return pd.read_csv('happy_train_data', comment='#', delim_whitespace=True, names=['ID','u','g','r','i','z','uErr','gErr','rErr','iErr','zErr','redshift','redshiftErr'])
+  all_val_data = df_val.to_numpy()
+  x_test = all_val_data[:, 0:(num_features)]
+  y_test = all_val_data[:, -1]
+
+  x_train, x_val, y_train, y_val = train_test_split(x, y, test_size=0.2, random_state=42)
+
+  chunks = 2
+  if num_features > 10:
+    chunks = 3
+
+  if num_features > 5:
+    x_train_ugriz, x_train_errs, x_train_experrs = ugriz_errs_split(x_train, chunks)
+    x_val_ugriz, x_val_errs, x_val_experrs = ugriz_errs_split(x_val, chunks)
+    x_test_ugriz, x_test_errs, x_test_experrs = ugriz_errs_split(x_test, chunks)
+
+    if scaler != None:
+      x_train_ugriz = scaler.fit_transform(x_train_ugriz)
+      x_val_ugriz = scaler.transform(x_val_ugriz)
+      x_test_ugriz = scaler.transform(x_test_ugriz)
+
+    if chunks == 2:
+        x_train = np.hstack((x_train_ugriz, x_train_errs))
+        x_val = np.hstack((x_val_ugriz, x_val_errs))
+        x_test = np.hstack((x_test_ugriz, x_test_errs))
+    else:
+        x_train = np.hstack((x_train_ugriz, x_train_errs, x_train_experrs))
+        x_val = np.hstack((x_val_ugriz, x_val_errs, x_val_experrs))
+        x_test = np.hstack((x_test_ugriz, x_test_errs, x_test_experrs))
+  else:
+    if scaler != None:
+      x_train = scaler.fit_transform(x_train)
+
+  return x_train, y_train, x_test, y_test, x_val, y_val, scaler
+
+
+def load_dataframe(dataset_name, coin_val):
+  if dataset_name == 'teddy' or dataset_name == 'happy':
+    if coin_val:
+      train = pd.read_csv(f"{dataset_name}_train_data", comment='#', delim_whitespace=True, names=['ID', 'u', 'g', 'r', 'i', 'z', 'uErr', 'gErr', 'rErr', 'iErr', 'zErr', 'redshift', 'redshiftErr'])
+      test  = pd.read_csv(f"{dataset_name}_val_data_{_val_idx[coin_val]}", comment='#', delim_whitespace=True, names=['ID', 'u', 'g', 'r', 'i', 'z', 'uErr', 'gErr', 'rErr', 'iErr', 'zErr', 'redshift', 'redshiftErr'])
+      return train, test
+    else:
+      return pd.read_csv(f"{dataset_name}_train_data", comment='#', delim_whitespace=True, names=['ID','u','g','r','i','z','uErr','gErr','rErr','iErr','zErr','redshift','redshiftErr'])
 
   if dataset_name == 'kaggle' or dataset_name == 'kaggle_bkp':
     return pd.read_csv('kaggle_train_data.csv')
@@ -91,16 +134,18 @@ def load_dataframe(dataset_name):
   return None
 
 
-def download_data(dataset_name):
+def download_data(dataset_name, coin_val):
   if dataset_name == 'teddy':
-    if os.path.isfile('teddy_train_data'):
-      print("Dataset Found!")
+    if coin_val:
+      download_teddy()
+      download_teddy(data_chunk=coin_val)
     else:
       download_teddy()
 
   if dataset_name == 'happy':
-    if os.path.isfile('happy_train_data'):
-      print("Dataset Found!")
+    if coin_val:
+      download_happy()
+      download_happy(data_chunk=coin_val)
     else:
       download_happy()
 
@@ -123,14 +168,34 @@ def download_data(dataset_name):
       download_sdss_alternative()
 
 
-def download_teddy():
-  os.system('wget https://raw.githubusercontent.com/COINtoolbox/photoz_catalogues/master/Teddy/forTemplateBased/teddyT_A.cat')
-  os.system('mv teddyT_A.cat teddy_train_data')
+def download_teddy(data_chunk='A'):
+  data_file = 'teddy_train_data'
+  if data_chunk != 'A':
+    data_file = f"teddy_val_data_{_val_idx[data_chunk]}"
+
+  if os.path.isfile(data_file):
+    print("Dataset Found!")
+  else:
+    os.system(f"wget https://raw.githubusercontent.com/COINtoolbox/photoz_catalogues/master/Teddy/forTemplateBased/teddyT_{data_chunk}.cat")
+    if data_chunk == 'A':
+      os.system(f"mv teddyT_{data_chunk}.cat teddy_train_data")
+    else:
+      os.system(f"mv teddyT_{data_chunk}.cat teddy_val_data_{_val_idx[data_chunk]}")
 
 
-def download_happy():
-  os.system('wget https://raw.githubusercontent.com/COINtoolbox/photoz_catalogues/master/Happy/forTemplateBased/happyT_A')
-  os.system('mv happyT_A happy_train_data')
+def download_happy(data_chunk='A'):
+  data_file = 'happy_train_data'
+  if data_chunk != 'A':
+    data_file = f"happy_val_data_{_val_idx[data_chunk]}"
+
+  if os.path.isfile(data_file):
+    print("Dataset Found!")
+  else:
+    os.system(f"wget https://raw.githubusercontent.com/COINtoolbox/photoz_catalogues/master/Happy/forTemplateBased/happyT_{data_chunk}")
+    if data_chunk == 'A':
+      os.system(f"mv happyT_{data_chunk}.cat happy_train_data")
+    else:
+      os.system(f"mv happyT_{data_chunk}.cat happy_val_data_{_val_idx[data_chunk]}")
 
 
 def download_kaggle():

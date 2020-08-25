@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import os
+import glob
 
 from math import sqrt
 from time import sleep
@@ -22,6 +23,7 @@ from modules.regularization import ErrorBasedDropoutZero
 
 
 MODEL_FILE = 'model_weights.hdf5'
+MODEL_TRACE_FILE = 'model_trace_weights.hdf5'
 
 
 def custom_layer_register():
@@ -32,10 +34,13 @@ def custom_layer_register():
     }
 
 
-def serialize_results(real, pred, cfg):
+def serialize_results(real, pred, cfg, coin_val):
     data = np.array([real, pred], dtype='float32').T
     df = pd.DataFrame(data=data, columns=['Real', 'Pred'])
     dump_file = f"real_x_pred_{cfg.args.dp}_{cfg.args.sc}_{cfg.args.dataset}"
+
+    if coin_val:
+        dump_file = f"{dump_file}_coin_valset_{coin_val}"
 
     if cfg.args.xgbr:
         dump_file = "XGBR" + dump_file
@@ -60,6 +65,124 @@ def get_best_model(data):
         return tf.keras.models.load_model(m['file'])
 
 
+def load_model_data(cfg):
+    model_file_mask = f"model_weights_{cfg.args.dataset}_{cfg.args.sc}_{cfg.args.dp}_{cfg.epochs}*"
+    model_files = glob.glob(model_file_mask)
+    model_files.sort()
+    best_model_file = model_files[-1]
+
+    with keras.utils.custom_object_scope(custom_layer_register()):
+        print(f">>>  {best_model_file} Loaded !")
+        return tf.keras.models.load_model(best_model_file)
+
+
+def load_models_data(cfg):
+    models = []
+    model_file_mask = f"model_weights_{cfg.args.dataset}_{cfg.args.sc}_{cfg.args.dp}_{cfg.epochs}*"
+    model_files = glob.glob(model_file_mask)
+    model_files.sort()
+
+    with keras.utils.custom_object_scope(custom_layer_register()):
+        first_model = f"{model_files[0].split('.')[0][:-1]}0.hdf5"
+        models.append(tf.keras.models.load_model(first_model))
+        print(f">>>  {first_model} Loaded !")
+
+    current_model = models[0]
+    for i in range(1, cfg.num_runs):
+        model_file = f"{model_files[0].split('.')[0][:-1]}{i}.hdf5"
+
+        if os.path.isfile(model_file):
+            with keras.utils.custom_object_scope(custom_layer_register()):
+                model = tf.keras.models.load_model(model_file)
+                print(f">>>  {model_file} Loaded !")
+                models.append(model)
+                current_model = model
+        else:
+            print(f">>> Loaded Same!")
+            models.append(current_model)
+
+    return models
+
+
+def load_trace_models_data(cfg):
+    models = []
+    model_file_mask = f"model_trace_weights_{cfg.args.dataset}_{cfg.args.sc}_{cfg.args.dp}_{cfg.epochs}*"
+    model_files = glob.glob(model_file_mask)
+    model_files.sort()
+
+    for i in range(0, cfg.num_runs):
+        model_file = f"{model_files[0].split('.')[0][:-1]}{i}.hdf5"
+
+        if os.path.isfile(model_file):
+            with keras.utils.custom_object_scope(custom_layer_register()):
+                model = tf.keras.models.load_model(model_file)
+                print(f">>>  {model_file} Loaded !")
+                models.append(model)
+
+    return models
+
+
+def do_scoring(d, cfg, model):
+    print(f'Using device: {cfg.device_name}')
+    with tf.device(cfg.device_name):
+        outputs = model.predict(d.x_test)
+        mse = mean_squared_error(d.y_test, outputs)
+        mae = mean_absolute_error(d.y_test, outputs)
+        rmse = sqrt(mse)
+        r2 = r2_score(d.y_test, outputs)
+
+        print('================ ARGS USED ===================')
+        print(cfg.args)
+
+        print(f"Result [lr: {cfg.learning_rate}]")
+        print(f"MSE  {mse:.4f}")
+        print(f"MAE  {mae:.4f}")
+        print(f"RMSE {rmse:.4f}")
+        print(f"R2   {r2:.4f}")
+
+def do_scoring_over(d, cfg, models):
+    print(f'Using device: {cfg.device_name}')
+    with tf.device(cfg.device_name):
+        all_scores = np.empty(shape=(0,3))
+        mses = np.array([])
+        maes = np.array([])
+        rmses = np.array([])
+        r2s = np.array([])
+        i = 0
+
+        for model in models:
+            scores = model.evaluate(d.x_test, d.y_test, verbose=0)
+            print('Scores (loss, mse, mae) for run %d: %s' % (i, scores))
+            all_scores = np.vstack((all_scores, scores))
+
+            outputs = model.predict(d.x_test)
+            mse = mean_squared_error(d.y_test, outputs)
+            mae = mean_absolute_error(d.y_test, outputs)
+            rmse = sqrt(mse)
+            r2 = r2_score(d.y_test, outputs)
+
+            mses = np.append(mses, mse)
+            maes = np.append(maes, mae)
+            rmses = np.append(rmses, rmse)
+            r2s = np.append(r2s, r2)
+            i = i + 1
+
+        print('================ ARGS USED ===================')
+        print(cfg.args)
+        print('================ RESULTS ===================')
+        runs = len(models)
+        print('Average over %d runs:' % runs)
+        print(np.mean(all_scores, axis=0))
+        print('Std deviation over %d runs:' % runs)
+        print(np.std(all_scores, axis=0))
+
+        print(f"Results after {runs} [lr: {cfg.learning_rate}]")
+        print(f"MSE  {mses.mean():.4f}±{mses.std():.4f}")
+        print(f"MAE  {maes.mean():.4f}±{maes.std():.4f}")
+        print(f"RMSE {rmses.mean():.4f}±{rmses.std():.4f}")
+        print(f"R2   {r2s.mean():.4f}±{r2s.std():.4f}")
+
+
 def wait_model_dump():
     print('... dump model wait')
     tries = 0
@@ -75,7 +198,7 @@ def wait_model_dump():
     return True
 
 
-def do_training_runs(d, cfg, verbose=0, customized_dropout=None):
+def do_training_runs(d, cfg, verbose, customized_dropout):
     print(f'Using device: {cfg.device_name}')
     with tf.device(cfg.device_name):
         all_scores = np.empty(shape=(0,3))
@@ -104,6 +227,14 @@ def do_training_runs(d, cfg, verbose=0, customized_dropout=None):
                 best_model_filename = f'model_weights_{cfg.args.dataset}_{cfg.args.sc}_{cfg.args.dp}_{cfg.epochs}_run_{i}.hdf5'
                 cmd = f'mv {MODEL_FILE} {best_model_filename}'
                 os.system(cmd)
+
+            if os.path.isfile(MODEL_TRACE_FILE):
+                trace_model_filename = f'model_trace_weights_{cfg.args.dataset}_{cfg.args.sc}_{cfg.args.dp}_{cfg.epochs}_run_{i}.hdf5'
+                cmd = f'mv {MODEL_TRACE_FILE} {trace_model_filename}'
+                os.system(cmd)
+
+            #if not dumped:
+            #    model = load_model_data(cfg)
 
             scores = model.evaluate(d.x_test, d.y_test, verbose=0)
             print('Scores (loss, mse, mae) for run %d: %s' % (i, scores))
