@@ -26,15 +26,29 @@ def filter_col(dataframe):
   remove_col_df(dataframe, ('ID', '#ID', 'redshiftErr','objid', 'specobjid', 'class'))
 
 
-def filter_negative_redshift(dataframe):
+def filter_negative_data(dataframe, args):
+  if args.dataset == 'sdss':
+    return _filter_negative_redshift(dataframe, s='err_')
+  else:
+    return _filter_negative_redshift(dataframe, p='Err')
+
+
+def _filter_negative_redshift(dataframe, s='', p=''):
   orig = dataframe.shape[0]
   dataframe = dataframe[dataframe.u > 0]
   dataframe = dataframe[dataframe.g > 0]
   dataframe = dataframe[dataframe.r > 0]
   dataframe = dataframe[dataframe.i > 0]
   dataframe = dataframe[dataframe.z > 0]
+
+  dataframe = dataframe[dataframe[f"{s}u{p}"] > 0]
+  dataframe = dataframe[dataframe[f"{s}g{p}"] > 0]
+  dataframe = dataframe[dataframe[f"{s}r{p}"] > 0]
+  dataframe = dataframe[dataframe[f"{s}i{p}"] > 0]
+  dataframe = dataframe[dataframe[f"{s}z{p}"] > 0]
+
   clean = dataframe.shape[0]
-  print(f"Negative mags removed: {orig-clean}.")
+  print(f"Negative data removed: {orig-clean}.")
 
   return dataframe
 
@@ -123,15 +137,16 @@ def load_dataframe(dataset_name, coin_val):
       test  = pd.read_csv(f"{dataset_name}_val_data_{_val_idx[coin_val]}", comment='#', delim_whitespace=True, names=['ID', 'u', 'g', 'r', 'i', 'z', 'uErr', 'gErr', 'rErr', 'iErr', 'zErr', 'redshift', 'redshiftErr'])
       return train, test
     else:
-      return pd.read_csv(f"{dataset_name}_train_data", comment='#', delim_whitespace=True, names=['ID','u','g','r','i','z','uErr','gErr','rErr','iErr','zErr','redshift','redshiftErr'])
+      data = pd.read_csv(f"{dataset_name}_train_data", comment='#', delim_whitespace=True, names=['ID','u','g','r','i','z','uErr','gErr','rErr','iErr','zErr','redshift','redshiftErr'])
+      return data, None
 
   if dataset_name == 'kaggle' or dataset_name == 'kaggle_bkp':
-    return pd.read_csv('kaggle_train_data.csv')
+    return pd.read_csv('kaggle_train_data.csv'), None
 
   if dataset_name == 'sdss':
-    return pd.read_csv('sdss_train_data.csv', comment="#")
+    return pd.read_csv('sdss_train_data.csv', comment="#"), None
 
-  return None
+  return None, None
 
 
 def download_data(dataset_name, coin_val):
@@ -193,9 +208,9 @@ def download_happy(data_chunk='A'):
   else:
     os.system(f"wget https://raw.githubusercontent.com/COINtoolbox/photoz_catalogues/master/Happy/forTemplateBased/happyT_{data_chunk}")
     if data_chunk == 'A':
-      os.system(f"mv happyT_{data_chunk}.cat happy_train_data")
+      os.system(f"mv happyT_{data_chunk} happy_train_data")
     else:
-      os.system(f"mv happyT_{data_chunk}.cat happy_val_data_{_val_idx[data_chunk]}")
+      os.system(f"mv happyT_{data_chunk} happy_val_data_{_val_idx[data_chunk]}")
 
 
 def download_kaggle():
