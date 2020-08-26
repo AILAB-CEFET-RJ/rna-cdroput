@@ -7,6 +7,22 @@ import glob
 import matplotlib.pyplot as plt
 
 
+_MAP_METHOD_NAMES = {
+    'none' : 'RNA',
+    'ErrorBasedDropoutIR': 'RNA-RI',
+    'ErrorBasedDropoutDT': 'RNA-AD'
+}
+
+_MAP_SCALER_NAMES = {
+    'StandardScaler': 'Padrão',
+    'none': 'N.A.'
+}
+
+_MAP_DATASET_NAMES = {
+    'teddy': 'Teddy',
+    'happy': 'Happy'
+}
+
 def parser():
    parser = argparse.ArgumentParser(description='Reports module')
    parser.add_argument('-dir', metavar='DIR', help='Result file directory.')
@@ -112,31 +128,18 @@ def percent_distance_std(pred, real, bins):
 
 
 def gen_img_hist_report(files_dir, dropout, scaler, dataset, metric):
-    file_mask = f"{files_dir}/hist/hist_{dropout}_{scaler}_{dataset}*"
-    files = glob.glob(file_mask)
-    files.sort()
-    best_hist_file = files[-1]
-    print(f"######## {best_hist_file.split('/')[-1]} ########")
-    hist = pd.read_csv(best_hist_file)
-    print(hist.info())
-    print(hist.head())
-
-    if metric == None:
-        metric = 'loss'
-
-    fig, ax = plt.subplots()
-    hist[[metric, f"val_{metric}"]].plot.line(ax=ax)
-    plt.show()
-
-
-def gen_img_hist_report2(files_dir, dropout, scaler, dataset, metric):
     model_file_mask = f"{files_dir}/models/model_weights_{dataset}_{scaler}_{dropout}*"
     model_files = glob.glob(model_file_mask)
     model_files.sort()
-    best_model_file = model_files[-1]
-    idx = best_model_file.split('_')[-1].split('.')[0]
-    best_hist_file = glob.glob(f"{files_dir}/hist/hist_{dropout}_{scaler}_{dataset}_run_{idx}")[0]
-    print(f"######## {best_hist_file.split('/')[-1]} ########")
+
+    if len(model_files) > 0:
+        best_model_file = model_files[-1]
+        idx = best_model_file.split('_')[-1].split('.')[0]
+        best_hist_file = glob.glob(f"{files_dir}/hist/hist_{dropout}_{scaler}_{dataset}_run_{idx}")[0]
+        print(f"######## {best_hist_file.split('/')[-1]} ########")
+    else:
+        print(">>> MODEL MISS !!!")
+        best_hist_file = get_hist_model_miss_report(files_dir, dropout, scaler, dataset)
 
     hist = pd.read_csv(best_hist_file)
     print(hist.info())
@@ -147,7 +150,21 @@ def gen_img_hist_report2(files_dir, dropout, scaler, dataset, metric):
 
     fig, ax = plt.subplots()
     hist[[metric, f"val_{metric}"]].plot.line(ax=ax)
+    ax.set_title(f"{_MAP_DATASET_NAMES[dataset]}: {_MAP_METHOD_NAMES[dropout]} | Scaler[{_MAP_SCALER_NAMES[scaler]}]")
+    ax.set_xlabel('Épocas')
+    ax.set_ylabel('Erros')
     plt.show()
+
+
+def get_hist_model_miss_report(files_dir, dropout, scaler, dataset):
+    file_mask = f"{files_dir}/hist/hist_{dropout}_{scaler}_{dataset}*"
+    files = glob.glob(file_mask)
+    files.sort()
+    last_hist_file = files[-1]
+    print(f"######## {last_hist_file.split('/')[-1]} ########")
+
+    return last_hist_file
+
 
 
 if __name__ == '__main__':

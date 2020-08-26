@@ -176,11 +176,7 @@ def do_scoring_over(d, cfg, models):
         print('Std deviation over %d runs:' % runs)
         print(np.std(all_scores, axis=0))
 
-        print(f"Results after {runs} [lr: {cfg.learning_rate}]")
-        print(f"MSE  {mses.mean():.4f}±{mses.std():.4f}")
-        print(f"MAE  {maes.mean():.4f}±{maes.std():.4f}")
-        print(f"RMSE {rmses.mean():.4f}±{rmses.std():.4f}")
-        print(f"R2   {r2s.mean():.4f}±{r2s.std():.4f}")
+        print_scores(runs, cfg.learning_rate, mses, maes, rmses, r2s)
 
 
 def wait_model_dump():
@@ -267,11 +263,7 @@ def do_training_runs(d, cfg, verbose, customized_dropout):
         print('Std deviation over %d runs:' % cfg.num_runs)
         print(np.std(all_scores, axis=0))
 
-        print(f"Results after {cfg.num_runs} [lr: {cfg.learning_rate}]")
-        print(f"MSE  {mses.mean():.4f}±{mses.std():.4f}")
-        print(f"MAE  {maes.mean():.4f}±{maes.std():.4f}")
-        print(f"RMSE {rmses.mean():.4f}±{rmses.std():.4f}")
-        print(f"R2   {r2s.mean():.4f}±{r2s.std():.4f}")
+        print_scores(cfg.num_runs, cfg.learning_rate, mses, maes, rmses, r2s)
 
         all_runs_best_model = get_best_model(model_data)
         return all_runs_best_model, hist, all_scores
@@ -294,6 +286,14 @@ def neural_network(cfg, dropout=None):
                   )
 
     return model
+
+
+def print_scores(runs, lr, mses, maes, rmses, r2s):
+    print(f"Results after {runs} [lr: {lr}] x10¯²")
+    print(f"MSE  {mses.mean()*100:.4f}±{mses.std()*100:.4f}")
+    print(f"MAE  {maes.mean()*100:.4f}±{maes.std()*100:.4f}")
+    print(f"RMSE {rmses.mean()*100:.4f}±{rmses.std()*100:.4f}")
+    print(f"R2   {r2s.mean():.4f}±{r2s.std():.4f}")
 
 
 def runGradientBoost(x_train, y_train, params):
