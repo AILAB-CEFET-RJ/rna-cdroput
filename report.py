@@ -28,6 +28,7 @@ def parser():
    parser.add_argument('-dir', metavar='DIR', help='Result file directory.')
    parser.add_argument('-std_perc', action='store_true', help='Report of standard deviations distances.')
    parser.add_argument('-img_hist', action='store_true', help='Plot of best model learning curves.')
+   parser.add_argument('-hm', action='store_true', help='Plot results heatmap.')
    parser.add_argument('-metric', metavar='METRIC', help='Select metric to show in [-img_hist]. Default is loss.')
    parser.add_argument('-dp', metavar='DROPOUT', help='Dropout class used.')
    parser.add_argument('-sc', metavar='SCALER', help='Scaler class used.')
@@ -166,6 +167,30 @@ def get_hist_model_miss_report(files_dir, dropout, scaler, dataset):
     return last_hist_file
 
 
+def gen_heatmap_report(files_dir, dropout, scaler, dataset, extent=None):
+    preds_file_mask = f"{files_dir}/*{dropout}_{scaler}_{dataset}"
+    preds_files = glob.glob(preds_file_mask)
+
+    preds_file = preds_files[0]
+    print(f"######## {preds_file.split('/')[-1]} ########")
+
+    data = pd.read_csv(preds_file)
+    print(data.info())
+    print(data.head())
+
+    fig, ax = plt.subplots()
+    x = data['Pred']
+    y = data['Real']
+    heatmap, xedges, yedges = np.histogram2d(x, y, bins=100)
+    if (extent == None):
+        extent = [np.amin(x), np.amax(x), np.amin(y), np.amax(y)]
+    im = plt.imshow(heatmap.T, extent=extent, origin='lower')
+    im.set_cmap('gist_heat_r')
+    ax.set_title(f"{_MAP_DATASET_NAMES[dataset]}: {_MAP_METHOD_NAMES[dropout]} | Scaler[{_MAP_SCALER_NAMES[scaler]}]")
+    ax.set_xlabel('Z-Spec')
+    ax.set_ylabel('Z-Phot')
+    plt.show()
+
 
 if __name__ == '__main__':
     parser = parser()
@@ -174,6 +199,7 @@ if __name__ == '__main__':
     files_dir = args.dir
     std_perc_report = args.std_perc
     img_hist_report = args.img_hist
+    heatmap = args.hm
 
     if std_perc_report:
         gen_std_perc_report(files_dir)
@@ -184,3 +210,11 @@ if __name__ == '__main__':
         dataset = args.dataset
         metric = args.metric
         gen_img_hist_report(files_dir, dropout, scaler, dataset, metric)
+
+    if heatmap:
+        dropout = args.dp
+        scaler = args.sc
+        dataset = args.dataset
+        metric = args.metric
+        gen_heatmap_report(files_dir, dropout, scaler, dataset, metric)
+
