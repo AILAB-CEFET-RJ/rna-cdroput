@@ -39,16 +39,11 @@ def build_cfg(D, neurons_0, neurons_1, learning_rate, epochs, num_runs, args):
         monitor='val_loss', mode='min', filepath=best_weights_filepath, save_best_only=True
     )
 
-    trace_weights_filepath = os.path.join(model_dir, 'model_trace_weights.hdf5')
-    mcp_trace_save = ModelCheckpoint(
-        monitor='val_loss', mode='min', filepath=trace_weights_filepath
-    )
-
     if args.noes:
         print("early_stopping is disabled")
-        callbacks = [mcp_save, mcp_trace_save]
+        callbacks = [mcp_save]
     else:
-        callbacks = [early_stopping, mcp_save, mcp_trace_save]
+        callbacks = [early_stopping, mcp_save]
 
     device_name = tf.test.gpu_device_name()
 

@@ -224,11 +224,6 @@ def do_training_runs(d, cfg, verbose, customized_dropout):
                 cmd = f'mv {MODEL_FILE} {best_model_filename}'
                 os.system(cmd)
 
-            if os.path.isfile(MODEL_TRACE_FILE):
-                trace_model_filename = f'model_trace_weights_{cfg.args.dataset}_{cfg.args.sc}_{cfg.args.dp}_{cfg.epochs}_run_{i}.hdf5'
-                cmd = f'mv {MODEL_TRACE_FILE} {trace_model_filename}'
-                os.system(cmd)
-
             #if not dumped:
             #    model = load_model_data(cfg)
 
@@ -236,6 +231,10 @@ def do_training_runs(d, cfg, verbose, customized_dropout):
             print('Scores (loss, mse, mae) for run %d: %s' % (i, scores))
             all_scores = np.vstack((all_scores, scores))
 
+            trace_model_filename = f'model_trace_weights_{cfg.args.dataset}_{cfg.args.sc}_{cfg.args.dp}_{cfg.epochs}_run_{i}.hdf5'
+            model.save(trace_model_filename)
+
+            #predict and score
             outputs = model.predict(d.x_test)
             mse = mean_squared_error(d.y_test, outputs)
             mae = mean_absolute_error(d.y_test, outputs)
@@ -266,6 +265,7 @@ def do_training_runs(d, cfg, verbose, customized_dropout):
         print_scores(cfg.num_runs, cfg.learning_rate, mses, maes, rmses, r2s)
 
         all_runs_best_model = get_best_model(model_data)
+
         return all_runs_best_model, hist, all_scores
 
 
