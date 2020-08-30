@@ -30,7 +30,7 @@ def _cut_all_val_errs(df, val, s='', p=''):
   return df
 
 
-def remove_col_df(dataframe, dataset_name, col_to_remove):
+def remove_col_df(dataframe, col_to_remove):
   for c in col_to_remove:
     if c in dataframe.columns:
       dataframe.drop(columns=[c], axis=1,inplace=True)

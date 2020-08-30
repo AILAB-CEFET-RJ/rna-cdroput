@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import os
 import glob
+import time
 
 from math import sqrt
 from time import sleep
@@ -203,9 +204,11 @@ def do_training_runs(d, cfg, verbose, customized_dropout):
         rmses = np.array([])
         r2s = np.array([])
         model_data = np.array([])
+        times = np.array([])
 
         for i in range(cfg.num_runs):
             print('***Run #%d***' % i)
+            start = time.perf_counter()
             model = neural_network(cfg, customized_dropout)
             hist = model.fit(d.x_train, d.y_train,
                             validation_data = (d.x_val, d.y_val),
@@ -252,6 +255,10 @@ def do_training_runs(d, cfg, verbose, customized_dropout):
             maes = np.append(maes, mae)
             rmses = np.append(rmses, rmse)
             r2s = np.append(r2s, r2)
+
+            elapsed = time.perf_counter() - start
+            times = np.append(times, elapsed)
+
             serialize(hist, cfg, i)
 
         print('================ ARGS USED ===================')
@@ -263,6 +270,10 @@ def do_training_runs(d, cfg, verbose, customized_dropout):
         print(np.std(all_scores, axis=0))
 
         print_scores(cfg.num_runs, cfg.learning_rate, mses, maes, rmses, r2s)
+
+        print('--------------- Timing ----------------')
+        print(times)
+        print(f"Running times {times.mean():.2f}±{times.std():.2f} sec.")
 
         all_runs_best_model = get_best_model(model_data)
 
@@ -310,9 +321,12 @@ def do_xgbr_training_runs(d, cfg, params):
         maes = np.array([])
         rmses = np.array([])
         r2s = np.array([])
+        times = np.array([])
 
         for i in range(cfg.num_runs):
             print('***Run #%d***' % i)
+            start = time.perf_counter()
+
             model = runGradientBoost(d.x_train, d.y_train, params)
             outputs = model.predict(d.x_test)
 
@@ -326,6 +340,9 @@ def do_xgbr_training_runs(d, cfg, params):
             rmses = np.append(rmses, rmse)
             r2s = np.append(r2s, r2)
 
+            elapsed = time.perf_counter() - start
+            times = np.append(times, elapsed)
+
         print('================ ARGS USED ===================')
         print(cfg.args)
         print('================ RESULTS ===================')
@@ -334,6 +351,10 @@ def do_xgbr_training_runs(d, cfg, params):
         print(f"MAE  {maes.mean():.4f}±{maes.std():.4f}")
         print(f"RMSE {rmses.mean():.4f}±{rmses.std():.4f}")
         print(f"R2   {r2s.mean():.4f}±{r2s.std():.4f}")
+
+        print('--------------- Timing ----------------')
+        print(times)
+        print(f"Running times {times.mean():.2f}±{times.std():.2f} sec.")
 
         return model
 
