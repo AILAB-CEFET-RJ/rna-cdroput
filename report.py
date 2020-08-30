@@ -182,8 +182,25 @@ def gen_heatmap_report(files_dir, dropout, scaler, dataset, extent=None):
     x = data['Pred']
     y = data['Real']
     heatmap, xedges, yedges = np.histogram2d(x, y, bins=100)
+
     if (extent == None):
-        extent = [np.amin(x), np.amax(x), np.amin(y), np.amax(y)]
+        x_start = np.amin(x)
+        y_start = np.amin(y)
+        x_end = np.amax(x)
+        y_end = np.amax(y)
+
+        if x_start < y_start:
+            y_start = x_start
+        else:
+            x_start = y_start
+
+        if x_end > y_end:
+            y_end = x_end
+        else:
+            x_end = y_end
+
+        extent = [x_start, x_end, y_start, y_end]
+
     im = plt.imshow(heatmap.T, extent=extent, origin='lower')
     im.set_cmap('gist_heat_r')
     ax.set_title(f"{_MAP_DATASET_NAMES[dataset]}: {_MAP_METHOD_NAMES[dropout]} | Scaler[{_MAP_SCALER_NAMES[scaler]}]")
