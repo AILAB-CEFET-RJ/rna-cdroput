@@ -8,7 +8,29 @@ from sklearn.model_selection import train_test_split
 
 _val_idx = {"B": 1, "C": 2, "D": 3}
 
-def remove_col_df(dataframe, col_to_remove):
+
+def cut_val_band(df, band, val):
+  return df[df[band] <= val]
+
+
+def cut_all_val_errs(df, dataset_name, val):
+  if dataset_name == 'sdss':
+    return  _cut_all_val_errs(df, val, s='err_')
+  else:
+    return _cut_all_val_errs(df, val, p='Err')
+
+
+def _cut_all_val_errs(df, val, s='', p=''):
+  df = df[df[f"{s}u{p}"] <= val]
+  df = df[df[f"{s}g{p}"] <= val]
+  df = df[df[f"{s}r{p}"] <= val]
+  df = df[df[f"{s}i{p}"] <= val]
+  df = df[df[f"{s}z{p}"] <= val]
+
+  return df
+
+
+def remove_col_df(dataframe, dataset_name, col_to_remove):
   for c in col_to_remove:
     if c in dataframe.columns:
       dataframe.drop(columns=[c], axis=1,inplace=True)
@@ -26,14 +48,14 @@ def filter_col(dataframe):
   remove_col_df(dataframe, ('ID', '#ID', 'redshiftErr','objid', 'specobjid', 'class'))
 
 
-def filter_negative_data(dataframe, args):
-  if args.dataset == 'sdss':
-    return _filter_negative_redshift(dataframe, s='err_')
+def filter_negative_data(dataframe, dataset):
+  if dataset == 'sdss':
+    return _filter_negative_data(dataframe, s='err_')
   else:
-    return _filter_negative_redshift(dataframe, p='Err')
+    return _filter_negative_data(dataframe, p='Err')
 
 
-def _filter_negative_redshift(dataframe, s='', p=''):
+def _filter_negative_data(dataframe, s='', p=''):
   orig = dataframe.shape[0]
   dataframe = dataframe[dataframe.u > 0]
   dataframe = dataframe[dataframe.g > 0]

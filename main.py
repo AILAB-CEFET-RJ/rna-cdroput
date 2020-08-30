@@ -78,6 +78,7 @@ def parser():
    parser.add_argument('-noes', action='store_true', help='Disable early stop.')
    parser.add_argument('-subs', metavar='SIZE', type=int, help='Subsample size. If pass, dataset full size will be used.')
    parser.add_argument('-rmne', action='store_true', help='Remove negative entries.')
+   parser.add_argument('-cut', action='store_true', help='Remove negative entries, cut 25 in u and 1.0 in all erros.')
    parser.add_argument('-hl1', metavar='HL1', type=int, help='Force amount of units in hidden layer 1.')
    parser.add_argument('-hl2', metavar='HL2', type=int, help='Force amount of units in hidden layer 2.')
    parser.add_argument('-coin_val', metavar='VALSET', help='Use a validation set from COIN data [B|C|D].')
@@ -87,11 +88,15 @@ def parser():
    return parser
 
 
-def apply_transforms(dataframe, subsample, args, rmne):
+def apply_transforms(dataframe, subsample, dataset_name, rmne, cuts):
     df = dataframe
 
-    if rmne:
-        df = dh.filter_negative_data(df, args)
+    if rmne or cuts:
+        df = dh.filter_negative_data(df, dataset_name)
+
+    if cuts:
+        df = dh.cut_all_val_errs(df, dataset_name, 1.0)
+        df = dh.cut_val_band(df, 'u', 25.0)
 
     if subsample is not None:
         subs_df = df.sample(n=subsample, random_state=42)
@@ -124,6 +129,7 @@ if __name__ == '__main__':
     coin_val = args.coin_val
     skip_training = args.m
     skip_training_over = args.mo
+    cuts = args.cut
 
     seed(42)
     tf.random.set_seed(42)
@@ -133,11 +139,11 @@ if __name__ == '__main__':
     scaler_to_use = reg.select_scaler(scaler_opt)
 
     dh.filter_col(df)
-    df = apply_transforms(df, subsample, args, args.rmne)
+    df = apply_transforms(df, subsample, dataset_name, args.rmne, cuts)
 
     if coin_val:
         dh.filter_col(df_val)
-        df_val = apply_transforms(df_val, None, args, False)
+        df_val = apply_transforms(df_val, None, dataset_name, False, False)
 
         x_train, y_train, x_test, y_test, x_val, y_val, scaler = dh.build_dataset_coin_data(df, df_val, num_features, scaler_to_use)
     else:
