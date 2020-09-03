@@ -46,7 +46,7 @@ def gen_std_perc_report(files_dir):
     for file in os.listdir(files_dir):
         print(f"######## {file} ########")
         data = {
-            'method': None, 'scaler': None, 'dropout': None, 'dataset': None,
+            'method': None, 'scaler': None, 'dropout': None, 'dataset': None, 'valset': None,
             '0 - 1': None, '1 - 2': None, '2 - 3': None, '3 - 4': None, '4 +': None
         }
         infos = file.split('_')
@@ -58,6 +58,9 @@ def gen_std_perc_report(files_dir):
         data['scaler'] = infos[4]
         data['dropout'] = infos[3]
         data['dataset'] = infos[5]
+
+        if len(infos) == 9:
+            data['valset'] = infos[8]
 
         pred_df = pd.read_csv(f"{files_dir}/{file}")
         b = [0, 1, 2, 3, 4]

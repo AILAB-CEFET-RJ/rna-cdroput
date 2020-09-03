@@ -39,7 +39,7 @@ def custom_layer_register():
 def serialize_results(real, pred, cfg, coin_val):
     data = np.array([real, pred], dtype='float32').T
     df = pd.DataFrame(data=data, columns=['Real', 'Pred'])
-    dump_file = f"real_x_pred_{cfg.args.dp}_{cfg.args.sc}_{cfg.args.dataset}"
+    dump_file = f"real_x_pred_{cfg.args.dp}_{cfg.args.sc}_{cfg.args.dataset}_{cfg.epochs}"
 
     if coin_val:
         dump_file = f"{dump_file}_coin_valset_{coin_val}"
