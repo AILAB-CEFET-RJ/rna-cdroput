@@ -6,6 +6,7 @@ import time
 
 from math import sqrt
 from time import sleep
+from joblib import dump, load
 
 from sklearn.isotonic import IsotonicRegression
 from sklearn.tree import DecisionTreeRegressor
@@ -77,6 +78,16 @@ def load_model_data(cfg):
         return tf.keras.models.load_model(best_model_file)
 
 
+def load_xgbr_trace_model_data(cfg):
+    model_file_mask = f"xgbr_model_trace_weights_{cfg.args.dataset}_{cfg.args.sc}_{cfg.epochs}*"
+    model_files = glob.glob(model_file_mask)
+    model_files.sort()
+    last_model_file = model_files[-1]
+
+    print(f">>>  {last_model_file} Loaded !")
+    return load(last_model_file)
+
+
 def load_models_data(cfg):
     models = []
     model_file_mask = f"model_weights_{cfg.args.dataset}_{cfg.args.sc}_{cfg.args.dp}_{cfg.epochs}*"
@@ -121,6 +132,24 @@ def load_trace_models_data(cfg):
                 models.append(model)
 
     return models
+
+
+def load_xgbr_trace_models_data(cfg):
+    models = []
+    model_file_mask = f"xgbr_model_trace_weights_{cfg.args.dataset}_{cfg.args.sc}_{cfg.epochs}*"
+    model_files = glob.glob(model_file_mask)
+    model_files.sort()
+
+    for i in range(0, cfg.num_runs):
+        model_file = f"{model_files[0].split('.')[0][:-1]}{i}.joblib"
+
+        if os.path.isfile(model_file):
+            model = load(model_file)
+            print(f">>>  {model_file} Loaded !")
+            models.append(model)
+
+    return models
+
 
 
 def do_scoring(d, cfg, model):
@@ -178,6 +207,35 @@ def do_scoring_over(d, cfg, models):
         print(np.std(all_scores, axis=0))
 
         print_scores(runs, cfg.learning_rate, mses, maes, rmses, r2s)
+
+
+def do_xgbr_scoring_over(d, cfg, models):
+    print(f'Using device: {cfg.device_name}')
+    with tf.device(cfg.device_name):
+        print(f'Using device: {cfg.device_name}')
+        with tf.device(cfg.device_name):
+            mses = np.array([])
+            maes = np.array([])
+            rmses = np.array([])
+            r2s = np.array([])
+
+            for model in models:
+                outputs = model.predict(d.x_test)
+
+                mse = mean_squared_error(d.y_test, outputs)
+                mae = mean_absolute_error(d.y_test, outputs)
+                rmse = sqrt(mse)
+                r2 = r2_score(d.y_test, outputs)
+
+                mses = np.append(mses, mse)
+                maes = np.append(maes, mae)
+                rmses = np.append(rmses, rmse)
+                r2s = np.append(r2s, r2)
+
+            print('================ ARGS USED ===================')
+            print(cfg.args)
+            print('================ RESULTS ===================')
+            print_scores(cfg.num_runs, cfg.learning_rate, mses, maes, rmses, r2s)
 
 
 def wait_model_dump():
@@ -328,6 +386,11 @@ def do_xgbr_training_runs(d, cfg, params):
             start = time.perf_counter()
 
             model = runGradientBoost(d.x_train, d.y_train, params)
+
+            trace_model_filename = f'xgbr_model_trace_weights_{cfg.args.dataset}_{cfg.args.sc}_{cfg.epochs}_run_{i}.joblib'
+            dump(model, trace_model_filename)
+            print(f"#### dump model [{trace_model_filename}]")
+
             outputs = model.predict(d.x_test)
 
             mse = mean_squared_error(d.y_test, outputs)
@@ -346,11 +409,7 @@ def do_xgbr_training_runs(d, cfg, params):
         print('================ ARGS USED ===================')
         print(cfg.args)
         print('================ RESULTS ===================')
-        print(f"Results after {cfg.num_runs} [lr: {cfg.learning_rate}]")
-        print(f"MSE  {mses.mean():.4f}±{mses.std():.4f}")
-        print(f"MAE  {maes.mean():.4f}±{maes.std():.4f}")
-        print(f"RMSE {rmses.mean():.4f}±{rmses.std():.4f}")
-        print(f"R2   {r2s.mean():.4f}±{r2s.std():.4f}")
+        print_scores(cfg.num_runs, cfg.learning_rate, mses, maes, rmses, r2s)
 
         print('--------------- Timing ----------------')
         print(times)

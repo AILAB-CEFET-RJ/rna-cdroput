@@ -161,17 +161,25 @@ if __name__ == '__main__':
 
     if xgboost:
         print("## Run XGBoostRegressor ##")
-        params = {'n_estimators': epochs,
-                  'max_depth': 8,
-                  'min_samples_split': 5,
-                  'validation_fraction': 0.2,
-                  'n_iter_no_change': int(0.2 * epochs),
-                  'learning_rate': learning_rate,
-                  'loss': 'ls',
-                  'random_state': 0
-                  }
         cfg = build_cfg(D, 0, 0, learning_rate, epochs, num_runs, args)
-        model = t.do_xgbr_training_runs(d, cfg, params)
+
+        if skip_training_over:
+            print("#### SKIP TRAINING ####")
+            models = t.load_xgbr_trace_models_data(cfg)
+            t.do_xgbr_scoring_over(d, cfg, models)
+            model = t.load_xgbr_trace_model_data(cfg)
+        else:
+            params = {'n_estimators': epochs,
+                      'max_depth': 8,
+                      'min_samples_split': 5,
+                      'validation_fraction': 0.2,
+                      'n_iter_no_change': int(0.2 * epochs),
+                      'learning_rate': learning_rate,
+                      'loss': 'ls',
+                      'random_state': 0
+                      }
+            model = t.do_xgbr_training_runs(d, cfg, params)
+
         outputs = model.predict(x_test)
 
     else:
