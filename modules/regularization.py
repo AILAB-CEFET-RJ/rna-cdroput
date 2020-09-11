@@ -148,3 +148,45 @@ class ErrorBasedDropoutDT(ErrorBasedDropoutIR):
     def __init__(self, **kwargs):
         super(ErrorBasedDropoutDT, self).__init__(**kwargs)
         print('ErrorBasedDropoutDT')
+
+
+class ErrorBasedInvertedDropout(tf.keras.layers.Layer):
+    def __init__(self, **kwargs):
+        super(ErrorBasedInvertedDropout, self).__init__(**kwargs)
+        print('ErrorBasedInvertedDropout')
+
+    def call(self, inputs, training=None):
+        NUM_BANDS = 5
+        ugriz = inputs[:, :NUM_BANDS]
+        errs = inputs[:, NUM_BANDS:2 * NUM_BANDS]
+        expErrs = inputs[:, 2 * NUM_BANDS:]
+        print('call.ugriz:', ugriz)
+        print('call.errs:', errs)
+        print('call.expErrs:', expErrs)
+
+        def droppedout_ugriz(ugriz, errs):
+            ones = tf.ones(shape=(1, NUM_BANDS), dtype=tf.dtypes.float32)
+            sfmax = tf.nn.softmax(tf.math.divide(tf.math.subtract(errs, expErrs), errs))
+            keep_probs = tf.math.subtract(ones, sfmax[0])
+            print('keep_probs:', keep_probs)
+            rnd_unif = tf.random.uniform(shape=(1, NUM_BANDS), dtype=tf.dtypes.float32)
+            mask = tf.math.greater(keep_probs, rnd_unif)
+            casted_mask = tf.cast(mask, dtype=tf.dtypes.float32)
+
+            masked_input = tf.math.multiply(ugriz, casted_mask)
+            print('before scaling: ', masked_input)
+
+            keep_probs_mean = tf.math.reduce_mean(keep_probs)
+            print('keep_probs_mean: ', keep_probs_mean)
+
+            masked_input = tf.math.divide(masked_input, keep_probs_mean)
+            print('after scaling: ', masked_input)
+
+            return masked_input
+
+        if training:
+            output = droppedout_ugriz(ugriz, errs)
+        else:
+            output = ugriz
+
+        return output
