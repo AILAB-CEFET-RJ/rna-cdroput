@@ -8,7 +8,10 @@ import matplotlib.pyplot as plt
 
 
 _MAP_METHOD_NAMES = {
-    'none' : 'RNA',
+    'none10' : 'RNA10',
+    'None10' : 'RNA10',
+    'none5' : 'RNA05',
+    'None5' : 'RNA05',
     'ErrorBasedDropoutIR': 'RNA-RI',
     'ErrorBasedDropoutDT': 'RNA-AD'
 }
@@ -20,7 +23,8 @@ _MAP_SCALER_NAMES = {
 
 _MAP_DATASET_NAMES = {
     'teddy': 'Teddy',
-    'happy': 'Happy'
+    'happy': 'Happy',
+    'sdss': 'SDSS'
 }
 
 def parser():
@@ -32,6 +36,7 @@ def parser():
    parser.add_argument('-metric', metavar='METRIC', help='Select metric to show in [-img_hist]. Default is loss.')
    parser.add_argument('-dp', metavar='DROPOUT', help='Dropout class used.')
    parser.add_argument('-sc', metavar='SCALER', help='Scaler class used.')
+   parser.add_argument('-f', metavar='FEATURES', help='Number of features.')
    parser.add_argument('-dataset', metavar='DS', help='Dataset to use [teddy|happy|kaggle|kaggle_bkp].')
 
    return parser
@@ -131,7 +136,7 @@ def percent_distance_std(pred, real, bins):
     return result
 
 
-def gen_img_hist_report(files_dir, dropout, scaler, dataset, metric):
+def gen_img_hist_report(files_dir, dropout, scaler, dataset, metric, features):
     model_file_mask = f"{files_dir}/models/model_weights_{dataset}_{scaler}_{dropout}*"
     model_files = glob.glob(model_file_mask)
     model_files.sort()
@@ -154,7 +159,7 @@ def gen_img_hist_report(files_dir, dropout, scaler, dataset, metric):
 
     fig, ax = plt.subplots()
     hist[[metric, f"val_{metric}"]].plot.line(ax=ax)
-    ax.set_title(f"{_MAP_DATASET_NAMES[dataset]}: {_MAP_METHOD_NAMES[dropout]} | Scaler[{_MAP_SCALER_NAMES[scaler]}]")
+    ax.set_title(f"{_MAP_DATASET_NAMES[dataset]}: {_MAP_METHOD_NAMES[dropout+features]} | Scaler[{_MAP_SCALER_NAMES[scaler]}]")
     ax.set_xlabel('Épocas')
     ax.set_ylabel('Erros')
     plt.show()
@@ -229,7 +234,8 @@ if __name__ == '__main__':
         scaler = args.sc
         dataset = args.dataset
         metric = args.metric
-        gen_img_hist_report(files_dir, dropout, scaler, dataset, metric)
+        features = args.f
+        gen_img_hist_report(files_dir, dropout, scaler, dataset, metric, features)
 
     if heatmap:
         dropout = args.dp

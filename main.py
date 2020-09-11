@@ -5,8 +5,6 @@ import argparse
 from numpy.random import seed
 
 import tensorflow as tf
-from tensorflow.keras.callbacks import EarlyStopping
-from tensorflow.keras.callbacks import ModelCheckpoint
 
 from modules import dataset_handle as dh
 from modules import training as t
@@ -30,21 +28,6 @@ def build_d(x_train, y_train, x_test, y_test, x_val, y_val):
 
 
 def build_cfg(D, neurons_0, neurons_1, learning_rate, epochs, num_runs, args):
-    model_dir = '.'
-    patience = int(0.2 * epochs)
-    best_weights_filepath = os.path.join(model_dir, 'model_weights.hdf5')
-    early_stopping = EarlyStopping(monitor='val_loss', mode='min', patience=patience)
-
-    mcp_save = ModelCheckpoint(
-        monitor='val_loss', mode='min', filepath=best_weights_filepath, save_best_only=True
-    )
-
-    if args.noes:
-        print("early_stopping is disabled")
-        callbacks = [mcp_save]
-    else:
-        callbacks = [early_stopping, mcp_save]
-
     device_name = tf.test.gpu_device_name()
 
     if args.gpu:
@@ -52,7 +35,6 @@ def build_cfg(D, neurons_0, neurons_1, learning_rate, epochs, num_runs, args):
 
     cfg = Object()
     cfg.device_name = device_name
-    cfg.callbacks = callbacks
     cfg.learning_rate = learning_rate
     cfg.epochs = epochs
     cfg.D = D
@@ -60,6 +42,7 @@ def build_cfg(D, neurons_0, neurons_1, learning_rate, epochs, num_runs, args):
     cfg.l2_units = neurons_1
     cfg.num_runs = num_runs
     cfg.args = args
+    cfg.no_early_stopping = args.noes
 
     return cfg
 
@@ -165,9 +148,9 @@ if __name__ == '__main__':
 
         if skip_training_over:
             print("#### SKIP TRAINING ####")
-            models = t.load_xgbr_trace_models_data(cfg)
+            models = t.load_xgbr_models_data(cfg)
             t.do_xgbr_scoring_over(d, cfg, models)
-            model = t.load_xgbr_trace_model_data(cfg)
+            model = t.load_xgbr_model_data(cfg)
         else:
             params = {'n_estimators': epochs,
                       'max_depth': 8,
@@ -176,7 +159,6 @@ if __name__ == '__main__':
                       'n_iter_no_change': int(0.2 * epochs),
                       'learning_rate': learning_rate,
                       'loss': 'ls',
-                      'random_state': 0
                       }
             model = t.do_xgbr_training_runs(d, cfg, params)
 
@@ -207,7 +189,7 @@ if __name__ == '__main__':
 
         elif skip_training_over:
             print("#### SKIP TRAINING ####")
-            models = t.load_trace_models_data(cfg)
+            models = t.load_models_data(cfg)
             t.do_scoring_over(d, cfg, models)
             model = t.load_model_data(cfg)
 

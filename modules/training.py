@@ -3,9 +3,9 @@ import pandas as pd
 import os
 import glob
 import time
+import datetime
 
 from math import sqrt
-from time import sleep
 from joblib import dump, load
 
 from sklearn.isotonic import IsotonicRegression
@@ -19,13 +19,19 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 
+from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.callbacks import ModelCheckpoint
+
 from modules.regularization import ErrorBasedDropoutIR
 from modules.regularization import ErrorBasedDropoutDT
 from modules.regularization import ErrorBasedDropoutZero
 
 
-MODEL_FILE = 'model_weights.hdf5'
-MODEL_TRACE_FILE = 'model_trace_weights.hdf5'
+_MAP_METHOD_NAMES = {
+    None : 'RNA',
+    'ErrorBasedDropoutIR': 'RNA-RI',
+    'ErrorBasedDropoutDT': 'RNA-AD'
+}
 
 
 def custom_layer_register():
@@ -36,39 +42,60 @@ def custom_layer_register():
     }
 
 
+def preds_filename(cfg):
+    return f"real_x_pred_{model_name_nmnic(cfg)}_{cfg.args.sc}_{cfg.args.dataset}_epochs_{cfg.epochs}"
+
+
+def hist_filename(cfg, run):
+    return f"hist_{model_name_nmnic(cfg)}_{cfg.args.sc}_{cfg.args.dataset}_epochs_{cfg.epochs}_run_{run}"
+
+
+def model_name_nmnic(cfg):
+    modelname = _MAP_METHOD_NAMES[cfg.args.dp]
+    if cfg.args.xgbr:
+        modelname = 'XGB'
+    if not cfg.args.dp:
+        modelname = f"{modelname}{cfg.args.f:02d}"
+
+    return modelname
+
+
+def model_filename(cfg, run):
+    modelname = model_name_nmnic(cfg)
+    if run is not None:
+        return f'model_{modelname}_{cfg.args.dataset}_{cfg.args.sc}_epochs_{cfg.epochs}_run_{run}'
+    else:
+        return f'model_{modelname}_{cfg.args.dataset}_{cfg.args.sc}_epochs_{cfg.epochs}'
+
+
 def serialize_results(real, pred, cfg, coin_val):
     data = np.array([real, pred], dtype='float32').T
     df = pd.DataFrame(data=data, columns=['Real', 'Pred'])
-    dump_file = f"real_x_pred_{cfg.args.dp}_{cfg.args.sc}_{cfg.args.dataset}_{cfg.epochs}"
+    dump_file = preds_filename(cfg)
 
     if coin_val:
         dump_file = f"{dump_file}_coin_valset_{coin_val}"
-
-    if cfg.args.xgbr:
-        dump_file = "XGBR" + dump_file
 
     df.to_csv(dump_file, index=False)
     print(f"Result[{dump_file}] dumped!")
 
 
 def serialize(hist, cfg, i):
-    dump_file = f"hist_{cfg.args.dp}_{cfg.args.sc}_{cfg.args.dataset}_run_{i}"
+    dump_file = hist_filename(cfg, i)
     pd.DataFrame.from_dict(hist.history).to_csv(dump_file, index=False)
     print(f"Hist[{dump_file}] dumped!")
 
 
 def get_best_model(data):
-    print(f'Models: {data}')
     data = sorted(data, key=lambda k: k['mse'])
     m = data[0]
-    print(f'Model file load: {m}')
+    print(f'Best Model of all runs is: {m}')
 
-    with keras.utils.custom_object_scope(custom_layer_register()):
-        return tf.keras.models.load_model(m['file'])
+    return m['model']
 
 
 def load_model_data(cfg):
-    model_file_mask = f"model_weights_{cfg.args.dataset}_{cfg.args.sc}_{cfg.args.dp}_{cfg.epochs}*"
+    model_file_mask = f"{model_filename(cfg, None)}*"
     model_files = glob.glob(model_file_mask)
     model_files.sort()
     best_model_file = model_files[-1]
@@ -78,8 +105,8 @@ def load_model_data(cfg):
         return tf.keras.models.load_model(best_model_file)
 
 
-def load_xgbr_trace_model_data(cfg):
-    model_file_mask = f"xgbr_model_trace_weights_{cfg.args.dataset}_{cfg.args.sc}_{cfg.epochs}*"
+def load_xgbr_model_data(cfg):
+    model_file_mask = f"{model_filename(cfg, None)}*"
     model_files = glob.glob(model_file_mask)
     model_files.sort()
     last_model_file = model_files[-1]
@@ -90,35 +117,7 @@ def load_xgbr_trace_model_data(cfg):
 
 def load_models_data(cfg):
     models = []
-    model_file_mask = f"model_weights_{cfg.args.dataset}_{cfg.args.sc}_{cfg.args.dp}_{cfg.epochs}*"
-    model_files = glob.glob(model_file_mask)
-    model_files.sort()
-
-    with keras.utils.custom_object_scope(custom_layer_register()):
-        first_model = f"{model_files[0].split('.')[0][:-1]}0.hdf5"
-        models.append(tf.keras.models.load_model(first_model))
-        print(f">>>  {first_model} Loaded !")
-
-    current_model = models[0]
-    for i in range(1, cfg.num_runs):
-        model_file = f"{model_files[0].split('.')[0][:-1]}{i}.hdf5"
-
-        if os.path.isfile(model_file):
-            with keras.utils.custom_object_scope(custom_layer_register()):
-                model = tf.keras.models.load_model(model_file)
-                print(f">>>  {model_file} Loaded !")
-                models.append(model)
-                current_model = model
-        else:
-            print(f">>> Loaded Same!")
-            models.append(current_model)
-
-    return models
-
-
-def load_trace_models_data(cfg):
-    models = []
-    model_file_mask = f"model_trace_weights_{cfg.args.dataset}_{cfg.args.sc}_{cfg.args.dp}_{cfg.epochs}*"
+    model_file_mask = f"{model_filename(cfg, None)}*"
     model_files = glob.glob(model_file_mask)
     model_files.sort()
 
@@ -134,9 +133,9 @@ def load_trace_models_data(cfg):
     return models
 
 
-def load_xgbr_trace_models_data(cfg):
+def load_xgbr_models_data(cfg):
     models = []
-    model_file_mask = f"xgbr_model_trace_weights_{cfg.args.dataset}_{cfg.args.sc}_{cfg.epochs}*"
+    model_file_mask = f"{model_filename(cfg, None)}*"
     model_files = glob.glob(model_file_mask)
     model_files.sort()
 
@@ -238,19 +237,24 @@ def do_xgbr_scoring_over(d, cfg, models):
             print_scores(cfg.num_runs, cfg.learning_rate, mses, maes, rmses, r2s)
 
 
-def wait_model_dump():
-    print('... dump model wait')
-    tries = 0
-    while not os.path.exists(MODEL_FILE):
-        if tries == 10:
-            print('Give up !! Proceed with current model !!')
-            print('Epoch generates worst model !!')
-            return False
-        print('.', end='')
-        sleep(1)
-        tries = tries + 1
-    print('dump model done!')
-    return True
+def callbacks(cfg, run):
+    model_dir = '.'
+    best_model_filename = model_filename(cfg, run)+'.hdf5'
+    patience = int(0.2 * cfg.epochs)
+    best_weights_filepath = os.path.join(model_dir, best_model_filename)
+    early_stopping = EarlyStopping(monitor='val_loss', mode='min', patience=patience)
+
+    mcp_save = ModelCheckpoint(
+        monitor='val_loss', mode='min', filepath=best_weights_filepath, save_best_only=True
+    )
+
+    if cfg.no_early_stopping:
+        print("early_stopping is disabled")
+        callbacks = [mcp_save]
+    else:
+        callbacks = [early_stopping, mcp_save]
+
+    return callbacks
 
 
 def do_training_runs(d, cfg, verbose, customized_dropout):
@@ -272,28 +276,11 @@ def do_training_runs(d, cfg, verbose, customized_dropout):
                             validation_data = (d.x_val, d.y_val),
                             epochs = cfg.epochs,
                             verbose = verbose,
-                            callbacks = cfg.callbacks)
-
-            dumped = wait_model_dump()
-
-            if dumped:
-                with keras.utils.custom_object_scope(custom_layer_register()):
-                    best_model = tf.keras.models.load_model(MODEL_FILE)
-
-                model = best_model
-                best_model_filename = f'model_weights_{cfg.args.dataset}_{cfg.args.sc}_{cfg.args.dp}_{cfg.epochs}_run_{i}.hdf5'
-                cmd = f'mv {MODEL_FILE} {best_model_filename}'
-                os.system(cmd)
-
-            #if not dumped:
-            #    model = load_model_data(cfg)
+                            callbacks = callbacks(cfg, i))
 
             scores = model.evaluate(d.x_test, d.y_test, verbose=0)
             print('Scores (loss, mse, mae) for run %d: %s' % (i, scores))
             all_scores = np.vstack((all_scores, scores))
-
-            trace_model_filename = f'model_trace_weights_{cfg.args.dataset}_{cfg.args.sc}_{cfg.args.dp}_{cfg.epochs}_run_{i}.hdf5'
-            model.save(trace_model_filename)
 
             #predict and score
             outputs = model.predict(d.x_test)
@@ -302,12 +289,11 @@ def do_training_runs(d, cfg, verbose, customized_dropout):
             rmse = sqrt(mse)
             r2 = r2_score(d.y_test, outputs)
 
-            if dumped:
-                model_record = {
-                    'file': best_model_filename,
-                    'mse': mse, 'r2': r2
-                }
-                model_data = np.append(model_data, model_record)
+            model_record = {
+                'model': model,
+                'mse': mse, 'r2': r2
+            }
+            model_data = np.append(model_data, model_record)
 
             mses = np.append(mses, mse)
             maes = np.append(maes, mae)
@@ -328,10 +314,7 @@ def do_training_runs(d, cfg, verbose, customized_dropout):
         print(np.std(all_scores, axis=0))
 
         print_scores(cfg.num_runs, cfg.learning_rate, mses, maes, rmses, r2s)
-
-        print('--------------- Timing ----------------')
-        print(times)
-        print(f"Running times {times.mean():.2f}±{times.std():.2f} sec.")
+        print_times(times)
 
         all_runs_best_model = get_best_model(model_data)
 
@@ -357,19 +340,23 @@ def neural_network(cfg, dropout=None):
     return model
 
 
+def print_times(times):
+    print('--------------- Timing ----------------')
+    mt = datetime.timedelta(seconds=(times.mean()*1000))
+    stdt = datetime.timedelta(seconds=(times.std()*1000))
+    print(f"Done in {mt}±{stdt} min.")
+
+
 def print_scores(runs, lr, mses, maes, rmses, r2s):
+    p = '2f'
+    m = 100
     print(f"Results after {runs} [lr: {lr}] x10¯²")
-    print(f"MSE  {mses.mean()*100:.4f}±{mses.std()*100:.4f}")
-    print(f"MAE  {maes.mean()*100:.4f}±{maes.std()*100:.4f}")
-    print(f"RMSE {rmses.mean()*100:.4f}±{rmses.std()*100:.4f}")
-    print(f"R2   {r2s.mean():.4f}±{r2s.std():.4f}")
-
-
-def runGradientBoost(x_train, y_train, params):
-  reg = ensemble.GradientBoostingRegressor(**params)
-  reg.fit(x_train, y_train)
-
-  return reg
+    print(f"MSE  {mses.mean()*m:.{p}}±{mses.std()*m:.{p}}")
+    print(f"MAE  {maes.mean()*m:.{p}}±{maes.std()*m:.{p}}")
+    print(f"RMSE {rmses.mean()*m:.{p}}±{rmses.std()*m:.{p}}")
+    print(f"R2   {r2s.mean():.{p}}±{r2s.std():.{p}}")
+    print('--------------------------------------------------------')
+    print(f"[CSV] {mses.mean() * m:.{p}}±{mses.std() * m:.{p}},{maes.mean() * m:.{p}}±{maes.std() * m:.{p}},{rmses.mean() * m:.{p}}±{rmses.std() * m:.{p}},{r2s.mean():.{p}}±{r2s.std():.{p}}")
 
 
 def do_xgbr_training_runs(d, cfg, params):
@@ -385,9 +372,10 @@ def do_xgbr_training_runs(d, cfg, params):
             print('***Run #%d***' % i)
             start = time.perf_counter()
 
-            model = runGradientBoost(d.x_train, d.y_train, params)
+            model = ensemble.GradientBoostingRegressor(**params)
+            model.fit(d.x_train, d.y_train)
 
-            trace_model_filename = f'xgbr_model_trace_weights_{cfg.args.dataset}_{cfg.args.sc}_{cfg.epochs}_run_{i}.joblib'
+            trace_model_filename = f'{model_filename(cfg, i)}.joblib'
             dump(model, trace_model_filename)
             print(f"#### dump model [{trace_model_filename}]")
 
@@ -410,10 +398,7 @@ def do_xgbr_training_runs(d, cfg, params):
         print(cfg.args)
         print('================ RESULTS ===================')
         print_scores(cfg.num_runs, cfg.learning_rate, mses, maes, rmses, r2s)
-
-        print('--------------- Timing ----------------')
-        print(times)
-        print(f"Running times {times.mean():.2f}±{times.std():.2f} sec.")
+        print_times(times)
 
         return model
 
