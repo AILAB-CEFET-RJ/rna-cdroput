@@ -160,24 +160,6 @@ def load_xgbr_models_data(cfg):
     return models
 
 
-def do_scoring(d, cfg, model):
-    print(f'Using device: {cfg.device_name}')
-    with tf.device(cfg.device_name):
-        outputs = model.predict(d.x_test)
-        mse = mean_squared_error(d.y_test, outputs)
-        mae = mean_absolute_error(d.y_test, outputs)
-        rmse = sqrt(mse)
-        r2 = r2_score(d.y_test, outputs)
-
-        print('================ ARGS USED ===================')
-        print(cfg.args)
-
-        print(f"Result [lr: {cfg.learning_rate}]")
-        print(f"MSE  {mse:.4f}")
-        print(f"MAE  {mae:.4f}")
-        print(f"RMSE {rmse:.4f}")
-        print(f"R2   {r2:.4f}")
-
 def do_scoring_over(d, cfg, models):
     print(f'Using device: {cfg.device_name}')
     with tf.device(cfg.device_name):
@@ -258,7 +240,7 @@ def do_xgbr_scoring_over(d, cfg, models):
 
 def callbacks(cfg, run):
     model_dir = '.'
-    best_model_filename = model_filename(cfg, run) + '_from_epoch_{epoch}.hdf5'
+    best_model_filename = model_filename(cfg, run) + '_mse_{mse:.6f}_from_epoch_{epoch}.hdf5'
     patience = int(0.2 * cfg.epochs)
     best_weights_filepath = os.path.join(model_dir, best_model_filename)
     early_stopping = EarlyStopping(monitor='val_loss', mode='min', patience=patience)
