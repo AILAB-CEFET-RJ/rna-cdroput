@@ -1,8 +1,5 @@
 import tensorflow as tf
-from tensorflow.keras.layers import Dropout
 from tensorflow.keras.layers import Layer
-from tensorflow.python.keras.utils import tf_utils
-from tensorflow.python.ops import array_ops
 
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import MinMaxScaler
@@ -10,21 +7,21 @@ from sklearn.preprocessing import MinMaxScaler
 
 def select_dropout(dropout_opt):
     print(f"Selected Dropout: {dropout_opt}")
-    if dropout_opt == 'none':
+    if dropout_opt == 'none' or dropout_opt is None:
         return None
-    if dropout_opt == 'DropoutErrorBased':
-        return DropoutErrorBased()
     if dropout_opt == 'ErrorBasedDropoutZero':
         return ErrorBasedDropoutZero()
     if dropout_opt == 'ErrorBasedDropoutIR':
         return ErrorBasedDropoutIR()
     if dropout_opt == 'ErrorBasedDropoutDT':
         return ErrorBasedDropoutDT()
+    if dropout_opt == 'ErrorBasedInvertedDropout':
+        return ErrorBasedInvertedDropout()
 
 
 def select_scaler(scaler_opt):
     print(f"Selected Scaler: {scaler_opt}")
-    if scaler_opt == 'none':
+    if scaler_opt == 'none' or scaler_opt is None:
         return None
     if scaler_opt == 'StandardScaler':
         return StandardScaler()
@@ -46,7 +43,7 @@ def gen_prob_bits(noise):
     return bits, keep_prob
 
 
-def dropout(x, noise, noise_shape=None, seed=None, name=None):
+def dropout(x, noise):
     bits, keep_prob = gen_prob_bits(noise)
 
     scale = 1 / keep_prob
@@ -60,26 +57,6 @@ def split_input(inputs):
     inputs = inputs[:, :5]
 
     return inputs, errs
-
-
-class DropoutErrorBased(Dropout):
-    def __init__(self, **kwargs):
-        super(DropoutErrorBased, self).__init__(1.0, dynamic=True, **kwargs)
-
-    def call(self, inputs, training=None):
-        if training is None:
-            training = K.learning_phase()
-
-        inputs, errs = split_input(inputs)
-
-        def dropped_inputs():
-            return dropout(inputs, errs, seed=self.seed)
-
-        output = tf_utils.smart_cond(
-            training, dropped_inputs, lambda: array_ops.identity(inputs)
-        )
-
-        return output
 
 
 class ErrorBasedDropoutZero(Layer):
@@ -160,27 +137,27 @@ class ErrorBasedInvertedDropout(tf.keras.layers.Layer):
         ugriz = inputs[:, :NUM_BANDS]
         errs = inputs[:, NUM_BANDS:2 * NUM_BANDS]
         expErrs = inputs[:, 2 * NUM_BANDS:]
-        print('call.ugriz:', ugriz)
-        print('call.errs:', errs)
-        print('call.expErrs:', expErrs)
+        #print('call.ugriz:', ugriz)
+        #print('call.errs:', errs)
+        #print('call.expErrs:', expErrs)
 
         def droppedout_ugriz(ugriz, errs):
             ones = tf.ones(shape=(1, NUM_BANDS), dtype=tf.dtypes.float32)
             sfmax = tf.nn.softmax(tf.math.divide(tf.math.subtract(errs, expErrs), errs))
             keep_probs = tf.math.subtract(ones, sfmax[0])
-            print('keep_probs:', keep_probs)
+            #print('keep_probs:', keep_probs)
             rnd_unif = tf.random.uniform(shape=(1, NUM_BANDS), dtype=tf.dtypes.float32)
             mask = tf.math.greater(keep_probs, rnd_unif)
             casted_mask = tf.cast(mask, dtype=tf.dtypes.float32)
 
             masked_input = tf.math.multiply(ugriz, casted_mask)
-            print('before scaling: ', masked_input)
+            #print('before scaling: ', masked_input)
 
             keep_probs_mean = tf.math.reduce_mean(keep_probs)
-            print('keep_probs_mean: ', keep_probs_mean)
+            #print('keep_probs_mean: ', keep_probs_mean)
 
             masked_input = tf.math.divide(masked_input, keep_probs_mean)
-            print('after scaling: ', masked_input)
+            #print('after scaling: ', masked_input)
 
             return masked_input
 

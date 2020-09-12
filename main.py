@@ -1,5 +1,4 @@
 import math
-import os
 import argparse
 
 from numpy.random import seed
@@ -62,16 +61,17 @@ def parser():
    parser.add_argument('-subs', metavar='SIZE', type=int, help='Subsample size. If pass, dataset full size will be used.')
    parser.add_argument('-rmne', action='store_true', help='Remove negative entries.')
    parser.add_argument('-cut', action='store_true', help='Remove negative entries, cut 25 in u and 1.0 in all erros.')
-   parser.add_argument('-hl1', metavar='HL1', type=int, help='Force amount of units in hidden layer 1.')
-   parser.add_argument('-hl2', metavar='HL2', type=int, help='Force amount of units in hidden layer 2.')
+   parser.add_argument('-hl1', metavar='HL1', type=int, default=0, help='Force amount of units in hidden layer 1.')
+   parser.add_argument('-hl2', metavar='HL2', type=int, default=0, help='Force amount of units in hidden layer 2.')
    parser.add_argument('-coin_val', metavar='VALSET', help='Use a validation set from COIN data [B|C|D].')
-   parser.add_argument('-m', action='store_true', help='Reload best model trained previously. Skip train phase.')
    parser.add_argument('-mo', action='store_true', help='Reload all models trained stored previously. Skip train phase.')
+   parser.add_argument('-ir', action='store_true', help='Apply Isotonic Regression.')
+   parser.add_argument('-dt', action='store_true', help='Apply Decision Tree.')
 
    return parser
 
 
-def apply_transforms(dataframe, subsample, dataset_name, rmne, cuts):
+def apply_transforms(dataframe, dropout_opt, subsample, dataset_name, rmne, cuts, args):
     df = dataframe
 
     if rmne or cuts:
@@ -88,9 +88,9 @@ def apply_transforms(dataframe, subsample, dataset_name, rmne, cuts):
     else:
         print(f"Using full sample {df.shape[0]}.")
 
-    if dropout_opt == 'ErrorBasedDropoutIR':
+    if dropout_opt == 'ErrorBasedDropoutIR' or args.ir:
         df = t.apply_isotonic_regression(df, dataset_name)
-    if dropout_opt == 'ErrorBasedDropoutDT':
+    if dropout_opt == 'ErrorBasedDropoutDT' or args.dt:
         df = t.apply_decision_tree_regression(df, dataset_name)
 
     return df
@@ -110,7 +110,6 @@ if __name__ == '__main__':
     xgboost = args.xgbr
     subsample = args.subs
     coin_val = args.coin_val
-    skip_training = args.m
     skip_training_over = args.mo
     cuts = args.cut
 
@@ -122,12 +121,10 @@ if __name__ == '__main__':
     scaler_to_use = reg.select_scaler(scaler_opt)
 
     dh.filter_col(df)
-    df = apply_transforms(df, subsample, dataset_name, args.rmne, cuts)
+    df = apply_transforms(df, dropout_opt, subsample, dataset_name, args.rmne, cuts, args)
 
     if coin_val:
         dh.filter_col(df_val)
-        df_val = apply_transforms(df_val, None, dataset_name, False, False)
-
         x_train, y_train, x_test, y_test, x_val, y_val, scaler = dh.build_dataset_coin_data(df, df_val, num_features, scaler_to_use)
     else:
         x_train, y_train, x_test, y_test, x_val, y_val, scaler = dh.build_dataset(df, num_features, scaler_to_use)
@@ -176,25 +173,26 @@ if __name__ == '__main__':
 
         if args.hl1:
             neurons_0 = args.hl1
+        else:
+            args.hl1 = neurons_0
+
         if args.hl2:
             neurons_1 = args.hl2
+        else:
+            args.hl2 = neurons_1
 
         cfg = build_cfg(D, neurons_0, neurons_1, learning_rate, epochs, num_runs, args)
 
         print(f'input dim:{D}, feature dim: {f} for hl_0[{neurons_0}], hl_1[{neurons_1}]')
-        if skip_training:
-            print("#### SKIP TRAINING ####")
-            model = t.load_model_data(cfg)
-            t.do_scoring(d, cfg, model)
 
-        elif skip_training_over:
+        if skip_training_over:
             print("#### SKIP TRAINING ####")
-            models = t.load_models_data(cfg)
-            t.do_scoring_over(d, cfg, models)
-            model = t.load_model_data(cfg)
-
         else:
-            model, hist, all_scores = t.do_training_runs(d, cfg, 0, dropout)
+            t.do_training_runs(d, cfg, 0, dropout)
+
+        models = t.load_models_data(cfg)
+        model_data = t.do_scoring_over(d, cfg, models)
+        model = t.get_best_model(model_data)
 
         outputs = model.predict(x_test)
 

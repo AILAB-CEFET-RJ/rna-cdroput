@@ -112,13 +112,17 @@ def build_dataset(dataframe, num_features, scaler):
   return x_train, y_train, x_test, y_test, x_val, y_val, scaler
 
 
-def build_dataset_coin_data(dataframes, df_val, num_features, scaler):
-  all_train_data = dataframes.to_numpy()
+def build_dataset_coin_data(df_train, df_val, num_features, scaler):
+  all_train_data = df_train.to_numpy()
   x = all_train_data[:,0:(num_features)]
   y = all_train_data[:,-1]
 
   all_val_data = df_val.to_numpy()
-  x_test = all_val_data[:, 0:(num_features)]
+  val_nf = num_features
+  if num_features > 5:
+    val_nf = 10
+
+  x_test = all_val_data[:, 0:(val_nf)]
   y_test = all_val_data[:, -1]
 
   x_train, x_val, y_train, y_val = train_test_split(x, y, test_size=0.2, random_state=42)
@@ -130,7 +134,7 @@ def build_dataset_coin_data(dataframes, df_val, num_features, scaler):
   if num_features > 5:
     x_train_ugriz, x_train_errs, x_train_experrs = ugriz_errs_split(x_train, chunks)
     x_val_ugriz, x_val_errs, x_val_experrs = ugriz_errs_split(x_val, chunks)
-    x_test_ugriz, x_test_errs, x_test_experrs = ugriz_errs_split(x_test, chunks)
+    x_test_ugriz, x_test_errs, _ = ugriz_errs_split(x_test, 2)
 
     if scaler != None:
       x_train_ugriz = scaler.fit_transform(x_train_ugriz)
@@ -140,11 +144,12 @@ def build_dataset_coin_data(dataframes, df_val, num_features, scaler):
     if chunks == 2:
         x_train = np.hstack((x_train_ugriz, x_train_errs))
         x_val = np.hstack((x_val_ugriz, x_val_errs))
-        x_test = np.hstack((x_test_ugriz, x_test_errs))
     else:
         x_train = np.hstack((x_train_ugriz, x_train_errs, x_train_experrs))
         x_val = np.hstack((x_val_ugriz, x_val_errs, x_val_experrs))
-        x_test = np.hstack((x_test_ugriz, x_test_errs, x_test_experrs))
+
+    x_test = np.hstack((x_test_ugriz, x_test_errs))
+
   else:
     if scaler != None:
       x_train = scaler.fit_transform(x_train)

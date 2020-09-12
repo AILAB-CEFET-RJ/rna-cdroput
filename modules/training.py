@@ -25,6 +25,7 @@ from tensorflow.keras.callbacks import ModelCheckpoint
 from modules.regularization import ErrorBasedDropoutIR
 from modules.regularization import ErrorBasedDropoutDT
 from modules.regularization import ErrorBasedDropoutZero
+from modules.regularization import ErrorBasedInvertedDropout
 
 
 _MAP_METHOD_NAMES = {
@@ -38,16 +39,17 @@ def custom_layer_register():
     return {
         "ErrorBasedDropoutIR": ErrorBasedDropoutIR,
         "ErrorBasedDropoutDT": ErrorBasedDropoutDT,
-        "ErrorBasedDropoutZero": ErrorBasedDropoutZero
+        "ErrorBasedDropoutZero": ErrorBasedDropoutZero,
+        "ErrorBasedInvertedDropout": ErrorBasedInvertedDropout
     }
 
 
 def preds_filename(cfg):
-    return f"real_x_pred_{model_name_nmnic(cfg)}_{cfg.args.sc}_{cfg.args.dataset}_epochs_{cfg.epochs}"
+    return f"real_x_pred_{model_name_nmnic(cfg)}_{cfg.args.sc}_{cfg.args.dataset}_epochs_{cfg.epochs}_units_{cfg.args.hl1}_{cfg.args.hl2}"
 
 
 def hist_filename(cfg, run):
-    return f"hist_{model_name_nmnic(cfg)}_{cfg.args.sc}_{cfg.args.dataset}_epochs_{cfg.epochs}_run_{run}"
+    return f"hist_{model_name_nmnic(cfg)}_{cfg.args.sc}_{cfg.args.dataset}_epochs_{cfg.epochs}_units_{cfg.args.hl1}_{cfg.args.hl2}_run_{run}"
 
 
 def model_name_nmnic(cfg):
@@ -62,10 +64,27 @@ def model_name_nmnic(cfg):
 
 def model_filename(cfg, run):
     modelname = model_name_nmnic(cfg)
+    filename = f'model_{modelname}_{cfg.args.dataset}_{cfg.args.sc}_epochs_{cfg.epochs}_units_{cfg.args.hl1}_{cfg.args.hl2}'
+
     if run is not None:
-        return f'model_{modelname}_{cfg.args.dataset}_{cfg.args.sc}_epochs_{cfg.epochs}_run_{run}'
-    else:
-        return f'model_{modelname}_{cfg.args.dataset}_{cfg.args.sc}_epochs_{cfg.epochs}'
+        filename = f'{filename}_run_{run}'
+
+    return filename
+
+
+def clean_dir(cfg, run):
+    model_file_mask = f"{model_filename(cfg, run)}*"
+    model_files = glob.glob(model_file_mask)
+    models = {}
+    for mf in model_files:
+        key = int(mf.split('_')[-1].split('.')[0])
+        models[key] = mf
+
+    models = {k: models[k] for k in sorted(models)}
+    wrost_models_files = list(models)[:-1]
+
+    for wmf in wrost_models_files:
+        os.system(f"rm ./{models[wmf]}")
 
 
 def serialize_results(real, pred, cfg, coin_val):
@@ -94,17 +113,6 @@ def get_best_model(data):
     return m['model']
 
 
-def load_model_data(cfg):
-    model_file_mask = f"{model_filename(cfg, None)}*"
-    model_files = glob.glob(model_file_mask)
-    model_files.sort()
-    best_model_file = model_files[-1]
-
-    with keras.utils.custom_object_scope(custom_layer_register()):
-        print(f">>>  {best_model_file} Loaded !")
-        return tf.keras.models.load_model(best_model_file)
-
-
 def load_xgbr_model_data(cfg):
     model_file_mask = f"{model_filename(cfg, None)}*"
     model_files = glob.glob(model_file_mask)
@@ -121,14 +129,11 @@ def load_models_data(cfg):
     model_files = glob.glob(model_file_mask)
     model_files.sort()
 
-    for i in range(0, cfg.num_runs):
-        model_file = f"{model_files[0].split('.')[0][:-1]}{i}.hdf5"
-
-        if os.path.isfile(model_file):
-            with keras.utils.custom_object_scope(custom_layer_register()):
-                model = tf.keras.models.load_model(model_file)
-                print(f">>>  {model_file} Loaded !")
-                models.append(model)
+    for model_file in model_files:
+        with keras.utils.custom_object_scope(custom_layer_register()):
+            model = tf.keras.models.load_model(model_file)
+            print(f">>>  {model_file} Loaded !")
+            models.append(model)
 
     return models
 
@@ -148,7 +153,6 @@ def load_xgbr_models_data(cfg):
             models.append(model)
 
     return models
-
 
 
 def do_scoring(d, cfg, model):
@@ -173,6 +177,7 @@ def do_scoring_over(d, cfg, models):
     print(f'Using device: {cfg.device_name}')
     with tf.device(cfg.device_name):
         all_scores = np.empty(shape=(0,3))
+        model_data = np.array([])
         mses = np.array([])
         maes = np.array([])
         rmses = np.array([])
@@ -196,6 +201,13 @@ def do_scoring_over(d, cfg, models):
             r2s = np.append(r2s, r2)
             i = i + 1
 
+            model_record = {
+                'model': model,
+                'mse': mse, 'r2': r2
+            }
+
+            model_data = np.append(model_data, model_record)
+
         print('================ ARGS USED ===================')
         print(cfg.args)
         print('================ RESULTS ===================')
@@ -206,6 +218,8 @@ def do_scoring_over(d, cfg, models):
         print(np.std(all_scores, axis=0))
 
         print_scores(runs, cfg.learning_rate, mses, maes, rmses, r2s)
+
+        return model_data
 
 
 def do_xgbr_scoring_over(d, cfg, models):
@@ -239,7 +253,7 @@ def do_xgbr_scoring_over(d, cfg, models):
 
 def callbacks(cfg, run):
     model_dir = '.'
-    best_model_filename = model_filename(cfg, run)+'.hdf5'
+    best_model_filename = model_filename(cfg, run) + '_from_epoch_{epoch}.hdf5'
     patience = int(0.2 * cfg.epochs)
     best_weights_filepath = os.path.join(model_dir, best_model_filename)
     early_stopping = EarlyStopping(monitor='val_loss', mode='min', patience=patience)
@@ -260,12 +274,6 @@ def callbacks(cfg, run):
 def do_training_runs(d, cfg, verbose, customized_dropout):
     print(f'Using device: {cfg.device_name}')
     with tf.device(cfg.device_name):
-        all_scores = np.empty(shape=(0,3))
-        mses = np.array([])
-        maes = np.array([])
-        rmses = np.array([])
-        r2s = np.array([])
-        model_data = np.array([])
         times = np.array([])
 
         for i in range(cfg.num_runs):
@@ -278,47 +286,15 @@ def do_training_runs(d, cfg, verbose, customized_dropout):
                             verbose = verbose,
                             callbacks = callbacks(cfg, i))
 
-            scores = model.evaluate(d.x_test, d.y_test, verbose=0)
-            print('Scores (loss, mse, mae) for run %d: %s' % (i, scores))
-            all_scores = np.vstack((all_scores, scores))
-
-            #predict and score
-            outputs = model.predict(d.x_test)
-            mse = mean_squared_error(d.y_test, outputs)
-            mae = mean_absolute_error(d.y_test, outputs)
-            rmse = sqrt(mse)
-            r2 = r2_score(d.y_test, outputs)
-
-            model_record = {
-                'model': model,
-                'mse': mse, 'r2': r2
-            }
-            model_data = np.append(model_data, model_record)
-
-            mses = np.append(mses, mse)
-            maes = np.append(maes, mae)
-            rmses = np.append(rmses, rmse)
-            r2s = np.append(r2s, r2)
-
             elapsed = time.perf_counter() - start
             times = np.append(times, elapsed)
 
             serialize(hist, cfg, i)
+            clean_dir(cfg, i)
 
-        print('================ ARGS USED ===================')
-        print(cfg.args)
-        print('================ RESULTS ===================')
-        print('Average over %d runs:' % cfg.num_runs)
-        print(np.mean(all_scores, axis=0))
-        print('Std deviation over %d runs:' % cfg.num_runs)
-        print(np.std(all_scores, axis=0))
-
-        print_scores(cfg.num_runs, cfg.learning_rate, mses, maes, rmses, r2s)
         print_times(times)
 
-        all_runs_best_model = get_best_model(model_data)
-
-        return all_runs_best_model, hist, all_scores
+        return hist
 
 
 def neural_network(cfg, dropout=None):
@@ -344,7 +320,11 @@ def print_times(times):
     print('--------------- Timing ----------------')
     mt = datetime.timedelta(seconds=(times.mean()*1000))
     stdt = datetime.timedelta(seconds=(times.std()*1000))
-    print(f"Done in {mt}±{stdt} min.")
+    tm = f"{mt}±{stdt}"
+    print(f"Done in {tm} min.")
+    print(f"[CSV_t] {tm}")
+
+    return tm
 
 
 def print_scores(runs, lr, mses, maes, rmses, r2s):
@@ -354,9 +334,9 @@ def print_scores(runs, lr, mses, maes, rmses, r2s):
     print(f"MSE  {mses.mean()*m:.{p}}±{mses.std()*m:.{p}}")
     print(f"MAE  {maes.mean()*m:.{p}}±{maes.std()*m:.{p}}")
     print(f"RMSE {rmses.mean()*m:.{p}}±{rmses.std()*m:.{p}}")
-    print(f"R2   {r2s.mean():.{p}}±{r2s.std():.{p}}")
+    print(f"R2   {r2s.mean():.4f}±{r2s.std():.4f}")
     print('--------------------------------------------------------')
-    print(f"[CSV] {mses.mean() * m:.{p}}±{mses.std() * m:.{p}},{maes.mean() * m:.{p}}±{maes.std() * m:.{p}},{rmses.mean() * m:.{p}}±{rmses.std() * m:.{p}},{r2s.mean():.{p}}±{r2s.std():.{p}}")
+    print(f"[CSV] {mses.mean() * m:.{p}}±{mses.std() * m:.{p}},{maes.mean() * m:.{p}}±{maes.std() * m:.{p}},{rmses.mean() * m:.{p}}±{rmses.std() * m:.{p}},{r2s.mean():.4f}±{r2s.std():.4f}")
 
 
 def do_xgbr_training_runs(d, cfg, params):
