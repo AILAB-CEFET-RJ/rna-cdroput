@@ -31,7 +31,8 @@ from modules.regularization import ErrorBasedInvertedDropout
 _MAP_METHOD_NAMES = {
     None : 'RNA',
     'ErrorBasedDropoutIR': 'RNA-RI',
-    'ErrorBasedDropoutDT': 'RNA-AD'
+    'ErrorBasedDropoutDT': 'RNA-AD',
+    'ErrorBasedInvertedDropout': 'RNA-'
 }
 
 
@@ -54,6 +55,10 @@ def hist_filename(cfg, run):
 
 def model_name_nmnic(cfg):
     modelname = _MAP_METHOD_NAMES[cfg.args.dp]
+    if cfg.args.ir:
+        modelname=f"{modelname}RI-Inv"
+    if cfg.args.dt:
+        modelname=f"{modelname}AD-Inv"
     if cfg.args.xgbr:
         modelname = 'XGB'
     if not cfg.args.dp:
