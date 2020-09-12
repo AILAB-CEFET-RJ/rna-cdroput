@@ -7,23 +7,14 @@ import glob
 import matplotlib.pyplot as plt
 
 
-_MAP_METHOD_NAMES = {
-    'none10' : 'RNA10',
-    'None10' : 'RNA10',
-    'none5' : 'RNA05',
-    'None5' : 'RNA05',
-    'ErrorBasedDropoutIR': 'RNA-RI',
-    'ErrorBasedDropoutDT': 'RNA-AD'
-}
-
 _MAP_SCALER_NAMES = {
     'StandardScaler': 'Padrão',
     'none': 'N.A.'
 }
 
 _MAP_DATASET_NAMES = {
-    'teddy': 'Teddy',
-    'happy': 'Happy',
+    'teddy': 'COIN/Teddy',
+    'happy': 'COIN/Happy',
     'sdss': 'SDSS'
 }
 
@@ -34,38 +25,38 @@ def parser():
    parser.add_argument('-img_hist', action='store_true', help='Plot of best model learning curves.')
    parser.add_argument('-hm', action='store_true', help='Plot results heatmap.')
    parser.add_argument('-metric', metavar='METRIC', help='Select metric to show in [-img_hist]. Default is loss.')
-   parser.add_argument('-dp', metavar='DROPOUT', help='Dropout class used.')
    parser.add_argument('-sc', metavar='SCALER', help='Scaler class used.')
    parser.add_argument('-f', metavar='FEATURES', help='Number of features.')
    parser.add_argument('-dataset', metavar='DS', help='Dataset to use [teddy|happy|kaggle|kaggle_bkp].')
+   parser.add_argument('-model', metavar='MODEL', help='Model mnemonic.')
 
    return parser
 
 
 def gen_std_perc_report(files_dir):
     tbl = pd.DataFrame(columns=[
-        'method', 'scaler', 'dropout', 'dataset',
-        '0 - 1', '1 - 2', '2 - 3', '3 - 4', '4 +'
+        'method', 'scaler', 'dataset',
+        '0-1', '1-2', '2-3', '3-4', '4+'
     ])
 
-    for file in os.listdir(files_dir):
+    pred_file_mask = f"{files_dir}/real_*"
+    pred_files = glob.glob(pred_file_mask)
+    for file in pred_files:
         print(f"######## {file} ########")
         data = {
-            'method': None, 'scaler': None, 'dropout': None, 'dataset': None, 'valset': None,
-            '0 - 1': None, '1 - 2': None, '2 - 3': None, '3 - 4': None, '4 +': None
+            'method': None, 'scaler': None, 'dataset': None, 'valset': None,
+            '0-1': None, '1-2': None, '2-3': None, '3-4': None, '4+': None
         }
         infos = file.split('_')
-        if infos[0] == 'real':
-            data['method'] = 'ANN'
-        else:
-            data['method'] = 'XGB'
 
+        data['method'] = infos[3]
         data['scaler'] = infos[4]
-        data['dropout'] = infos[3]
         data['dataset'] = infos[5]
 
-        if len(infos) == 9:
-            data['valset'] = infos[8]
+        if len(infos) == 14:
+            data['valset'] = infos[13]
+        else:
+            data['valset'] = '-'
 
         pred_df = pd.read_csv(f"{files_dir}/{file}")
         b = [0, 1, 2, 3, 4]
@@ -75,11 +66,11 @@ def gen_std_perc_report(files_dir):
         format_std_perc_report(b, result)
         result = result * 100
 
-        data['0 - 1'] = np.round(result[0], 2)
-        data['1 - 2'] = np.round(result[1], 2)
-        data['2 - 3'] = np.round(result[2], 2)
-        data['3 - 4'] = np.round(result[3], 2)
-        data['4 +'] = np.round(result[4], 2)
+        data['0-1'] = np.round(result[0], 2)
+        data['1-2'] = np.round(result[1], 2)
+        data['2-3'] = np.round(result[2], 2)
+        data['3-4'] = np.round(result[3], 2)
+        data['4+'] = np.round(result[4], 2)
         tbl = tbl.append([data], ignore_index=True)
 
         print(f"############################################################")
@@ -136,19 +127,31 @@ def percent_distance_std(pred, real, bins):
     return result
 
 
-def gen_img_hist_report(files_dir, dropout, scaler, dataset, metric, features):
-    model_file_mask = f"{files_dir}/models/model_weights_{dataset}_{scaler}_{dropout}*"
+def get_best_model_file(model_files):
+    model_map={}
+    for m in model_files:
+        mse = float(m.split('mse')[1].split('_')[1])
+        model_map[mse] = m
+
+    models = {k: model_map[k] for k in sorted(model_map)} # sort by mse
+    best = list(models)[0]
+
+    return model_map[best]
+
+
+def gen_img_hist_report(files_dir, mnemonic, scaler, dataset, metric, features):
+    model_file_mask = f"{files_dir}/model_{mnemonic}_{dataset}_{scaler}*"
     model_files = glob.glob(model_file_mask)
     model_files.sort()
 
     if len(model_files) > 0:
-        best_model_file = model_files[-1]
-        idx = best_model_file.split('_')[-1].split('.')[0]
-        best_hist_file = glob.glob(f"{files_dir}/hist/hist_{dropout}_{scaler}_{dataset}_run_{idx}")[0]
+        best_model_file = get_best_model_file(model_files)
+        idx = best_model_file.split('run_')[1].split('_')[0]
+        best_hist_file = glob.glob(f"{files_dir}/hist_{mnemonic}_{scaler}_{dataset}*_run_{idx}")[0]
         print(f"######## {best_hist_file.split('/')[-1]} ########")
     else:
         print(">>> MODEL MISS !!!")
-        best_hist_file = get_hist_model_miss_report(files_dir, dropout, scaler, dataset)
+        best_hist_file = get_hist_model_miss_report(files_dir, mnemonic, scaler, dataset)
 
     hist = pd.read_csv(best_hist_file)
     print(hist.info())
@@ -159,14 +162,14 @@ def gen_img_hist_report(files_dir, dropout, scaler, dataset, metric, features):
 
     fig, ax = plt.subplots()
     hist[[metric, f"val_{metric}"]].plot.line(ax=ax)
-    ax.set_title(f"{_MAP_DATASET_NAMES[dataset]}: {_MAP_METHOD_NAMES[dropout+features]} | Scaler[{_MAP_SCALER_NAMES[scaler]}]")
+    ax.set_title(f"{_MAP_DATASET_NAMES[dataset]}: {mnemonic} | Scaler[{_MAP_SCALER_NAMES[scaler]}]")
     ax.set_xlabel('Épocas')
     ax.set_ylabel('Erros')
     plt.show()
 
 
-def get_hist_model_miss_report(files_dir, dropout, scaler, dataset):
-    file_mask = f"{files_dir}/hist/hist_{dropout}_{scaler}_{dataset}*"
+def get_hist_model_miss_report(files_dir, mnemonic, scaler, dataset):
+    file_mask = f"{files_dir}/hist_{mnemonic}_{scaler}_{dataset}*"
     files = glob.glob(file_mask)
     files.sort()
     last_hist_file = files[-1]
@@ -175,8 +178,8 @@ def get_hist_model_miss_report(files_dir, dropout, scaler, dataset):
     return last_hist_file
 
 
-def gen_heatmap_report(files_dir, dropout, scaler, dataset, extent=None):
-    preds_file_mask = f"{files_dir}/*{dropout}_{scaler}_{dataset}"
+def gen_heatmap_report(files_dir, mnemonic, scaler, dataset, extent=None):
+    preds_file_mask = f"{files_dir}/real_x_pred_{mnemonic}_{scaler}_{dataset}*"
     preds_files = glob.glob(preds_file_mask)
 
     preds_file = preds_files[0]
@@ -211,7 +214,7 @@ def gen_heatmap_report(files_dir, dropout, scaler, dataset, extent=None):
 
     im = plt.imshow(heatmap.T, extent=extent, origin='lower')
     im.set_cmap('gist_heat_r')
-    ax.set_title(f"{_MAP_DATASET_NAMES[dataset]}: {_MAP_METHOD_NAMES[dropout]} | Scaler[{_MAP_SCALER_NAMES[scaler]}]")
+    ax.set_title(f"{_MAP_DATASET_NAMES[dataset]}: {mnemonic} | Scaler[{_MAP_SCALER_NAMES[scaler]}]")
     ax.set_xlabel('Z-Spec')
     ax.set_ylabel('Z-Phot')
     plt.show()
@@ -225,22 +228,18 @@ if __name__ == '__main__':
     std_perc_report = args.std_perc
     img_hist_report = args.img_hist
     heatmap = args.hm
+    mnemonic = args.model
+    scaler = args.sc
+    dataset = args.dataset
+    metric = args.metric
+    features = args.f
 
     if std_perc_report:
         gen_std_perc_report(files_dir)
 
     if img_hist_report:
-        dropout = args.dp
-        scaler = args.sc
-        dataset = args.dataset
-        metric = args.metric
-        features = args.f
-        gen_img_hist_report(files_dir, dropout, scaler, dataset, metric, features)
+        gen_img_hist_report(files_dir, mnemonic, scaler, dataset, metric, features)
 
     if heatmap:
-        dropout = args.dp
-        scaler = args.sc
-        dataset = args.dataset
-        metric = args.metric
-        gen_heatmap_report(files_dir, dropout, scaler, dataset, metric)
+        gen_heatmap_report(files_dir, mnemonic, scaler, dataset, metric)
 
