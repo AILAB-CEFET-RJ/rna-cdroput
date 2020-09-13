@@ -305,10 +305,10 @@ def neural_network(cfg, dropout=None):
 
 def print_times(times):
     print('--------------- Timing ----------------')
-    mt = datetime.timedelta(seconds=(times.mean()*1000))
-    stdt = datetime.timedelta(seconds=(times.std()*1000))
+    mt = times.mean()
+    stdt = times.std()
     tm = f"{mt}±{stdt}"
-    print(f"Done in {tm} min.")
+    print(f"Done in {tm} sec.")
     print(f"[CSV_t] {tm}")
 
     return tm

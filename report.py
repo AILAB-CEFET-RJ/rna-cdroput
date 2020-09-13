@@ -1,11 +1,20 @@
-import os
 import argparse
 import numpy as np
 import pandas as pd
 import glob
 
+from datetime import timedelta
+
 import matplotlib.pyplot as plt
 
+_MAP_MNEMONIC_NAMES = {
+    'rna05': 'RNA05',
+    'rna10': 'RNA10',
+    'rnari': 'RNA-RI',
+    'rnaad': 'RNA-AD',
+    'rnariinv': 'RNA-RI-Inv',
+    'rnaadinv': 'RNA-AD-Inv',
+}
 
 _MAP_SCALER_NAMES = {
     'StandardScaler': 'Padrão',
@@ -29,6 +38,7 @@ def parser():
    parser.add_argument('-f', metavar='FEATURES', help='Number of features.')
    parser.add_argument('-dataset', metavar='DS', help='Dataset to use [teddy|happy|kaggle|kaggle_bkp].')
    parser.add_argument('-model', metavar='MODEL', help='Model mnemonic.')
+   parser.add_argument('-gen_table', action='store_true', help='Generate table from out files.')
 
    return parser
 
@@ -220,6 +230,72 @@ def gen_heatmap_report(files_dir, mnemonic, scaler, dataset, extent=None):
     plt.show()
 
 
+def gen_table_report(dir):
+    outs_file_mask = f"{dir}/out_*"
+    outs_files = glob.glob(outs_file_mask)
+    outs_files.sort()
+
+    tbl = pd.DataFrame(columns=[
+        'valset', 'method', 'dataset',
+        'mse', 'mae', 'rmse', 'r2', 'time'
+    ])
+
+    timereg = {}
+
+    for out in outs_files:
+        with open(out, 'r') as file:
+            infos = out.split('/')[-1].split('_')
+
+            for line in file:
+                if '[CSV_t]' in line:
+                    method = _MAP_MNEMONIC_NAMES[infos[1]]
+                    dataset = _MAP_DATASET_NAMES[infos[3].split('.')[0]]
+                    time = line.split('[CSV_t] ')[1]
+                    timereg[f"{method}_{dataset}"] = fix_time(time)
+
+                if '[CSV]' in line:
+                    valset = '-'
+                    if len(infos) > 4:
+                        valset = infos[-1].split('.')[0]
+                    d = line.split('[CSV] ')[1].replace("\n", '').split(',')
+                    method = _MAP_MNEMONIC_NAMES[infos[1]]
+                    dataset = _MAP_DATASET_NAMES[infos[3].split('.')[0]]
+                    data = {
+                        'method': method,
+                        'dataset': dataset,
+                        'valset': valset,
+                        'mse': d[0], 'mae': d[1], 'rmse': d[2], 'r2': d[3],
+                        'time': timereg[f"{method}_{dataset}"]
+                    }
+                    tbl = tbl.append([data], ignore_index=True)
+
+    tbl = tbl.sort_values(['valset', 'method', 'dataset'], ascending=False)
+    print(tbl.info())
+    print('=================================================================')
+    print(tbl.to_csv(index=False))
+    print('=================================================================')
+    print(tbl.to_latex(index=False))
+
+
+def fix_time(time):
+    times = time.split('±')
+
+    d = times[0].split(' days, ')
+    t0 = d[1].split(':')
+    t1 = times[1].split(':')
+
+    t = timedelta(days=int(d[0]), hours=int(t0[0]), minutes=int(t0[1]), seconds= float(t0[2]))
+    tstd = timedelta(hours=int(t1[0]), minutes=int(t1[1]), seconds= float(t1[2]))
+
+    t = round((t.total_seconds() / 1000) / 60)
+    tstd = (tstd.total_seconds() / 1000) / 60
+
+    print(t, tstd)
+
+    return t
+
+
+
 if __name__ == '__main__':
     parser = parser()
     args = parser.parse_args()
@@ -233,6 +309,7 @@ if __name__ == '__main__':
     dataset = args.dataset
     metric = args.metric
     features = args.f
+    gen_table = args.gen_table
 
     if std_perc_report:
         gen_std_perc_report(files_dir)
@@ -242,4 +319,8 @@ if __name__ == '__main__':
 
     if heatmap:
         gen_heatmap_report(files_dir, mnemonic, scaler, dataset, metric)
+
+    if gen_table:
+        gen_table_report(files_dir)
+
 
