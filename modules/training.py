@@ -3,7 +3,6 @@ import pandas as pd
 import os
 import glob
 import time
-import datetime
 
 from math import sqrt
 from joblib import dump, load
@@ -34,6 +33,10 @@ _MAP_METHOD_NAMES = {
     'ErrorBasedDropoutDT': 'RNA-AD',
     'ErrorBasedInvertedDropout': 'RNA-'
 }
+
+
+class Object(object):
+    pass
 
 
 def custom_layer_register():
@@ -110,22 +113,18 @@ def serialize(hist, cfg, i):
     print(f"Hist[{dump_file}] dumped!")
 
 
+def dump_hist(cfg, run, train_score, val_score):
+    hist = Object()
+    hist.history = {'loss': train_score, 'val_loss': val_score}
+    serialize(hist, cfg, run)
+
+
 def get_best_model(data):
     data = sorted(data, key=lambda k: k['mse'])
     m = data[0]
     print(f'Best Model of all runs is: {m}')
 
     return m['model']
-
-
-def load_xgbr_model_data(cfg):
-    model_file_mask = f"{model_filename(cfg, None)}*"
-    model_files = glob.glob(model_file_mask)
-    model_files.sort()
-    last_model_file = model_files[-1]
-
-    print(f">>>  {last_model_file} Loaded !")
-    return load(last_model_file)
 
 
 def load_models_data(cfg):
@@ -149,15 +148,17 @@ def load_xgbr_models_data(cfg):
     model_files = glob.glob(model_file_mask)
     model_files.sort()
 
-    for i in range(0, cfg.num_runs):
-        model_file = f"{model_files[0].split('.')[0][:-1]}{i}.joblib"
-
-        if os.path.isfile(model_file):
-            model = load(model_file)
-            print(f">>>  {model_file} Loaded !")
-            models.append(model)
+    for model_file in model_files:
+        model = load(model_file)
+        print(f">>>  {model_file} Loaded !")
+        models.append(model)
 
     return models
+
+
+def score_mad(real, pred):
+    dz_norm = (pred - real) / (1 + pred)
+    return np.median(np.abs(dz_norm))
 
 
 def do_scoring_over(d, cfg, models):
@@ -169,6 +170,7 @@ def do_scoring_over(d, cfg, models):
         maes = np.array([])
         rmses = np.array([])
         r2s = np.array([])
+        mads = np.array([])
         i = 0
 
         for model in models:
@@ -181,11 +183,13 @@ def do_scoring_over(d, cfg, models):
             mae = mean_absolute_error(d.y_test, outputs)
             rmse = sqrt(mse)
             r2 = r2_score(d.y_test, outputs)
+            mad = score_mad(d.y_test, outputs)
 
             mses = np.append(mses, mse)
             maes = np.append(maes, mae)
             rmses = np.append(rmses, rmse)
             r2s = np.append(r2s, r2)
+            mads = np.append(mads, mad)
             i = i + 1
 
             model_record = {
@@ -204,38 +208,49 @@ def do_scoring_over(d, cfg, models):
         print('Std deviation over %d runs:' % runs)
         print(np.std(all_scores, axis=0))
 
-        print_scores(runs, cfg.learning_rate, mses, maes, rmses, r2s)
+        print_scores(runs, cfg.learning_rate, mses, maes, rmses, r2s, mads)
+        print_trace_scores(mses, maes, rmses, mads, r2s)
 
         return model_data
 
 
 def do_xgbr_scoring_over(d, cfg, models):
-    print(f'Using device: {cfg.device_name}')
-    with tf.device(cfg.device_name):
-        print(f'Using device: {cfg.device_name}')
-        with tf.device(cfg.device_name):
-            mses = np.array([])
-            maes = np.array([])
-            rmses = np.array([])
-            r2s = np.array([])
+    mses = np.array([])
+    maes = np.array([])
+    rmses = np.array([])
+    mads = np.array([])
+    r2s = np.array([])
+    model_data = np.array([])
 
-            for model in models:
-                outputs = model.predict(d.x_test)
+    for model in models:
+        outputs = model.predict(d.x_test)
 
-                mse = mean_squared_error(d.y_test, outputs)
-                mae = mean_absolute_error(d.y_test, outputs)
-                rmse = sqrt(mse)
-                r2 = r2_score(d.y_test, outputs)
+        mse = mean_squared_error(d.y_test, outputs)
+        mae = mean_absolute_error(d.y_test, outputs)
+        rmse = sqrt(mse)
+        mad = score_mad(d.y_test, outputs)
+        r2 = r2_score(d.y_test, outputs)
 
-                mses = np.append(mses, mse)
-                maes = np.append(maes, mae)
-                rmses = np.append(rmses, rmse)
-                r2s = np.append(r2s, r2)
+        mses = np.append(mses, mse)
+        maes = np.append(maes, mae)
+        rmses = np.append(rmses, rmse)
+        mads = np.append(mads, mad)
+        r2s = np.append(r2s, r2)
 
-            print('================ ARGS USED ===================')
-            print(cfg.args)
-            print('================ RESULTS ===================')
-            print_scores(cfg.num_runs, cfg.learning_rate, mses, maes, rmses, r2s)
+        model_record = {
+            'model': model,
+            'mse': mse, 'r2': r2
+        }
+
+        model_data = np.append(model_data, model_record)
+
+    print('================ ARGS USED ===================')
+    print(cfg.args)
+    print('================ RESULTS ===================')
+    print_scores(cfg.num_runs, cfg.learning_rate, mses, maes, rmses, r2s, mads)
+    print_trace_scores(mses, maes, rmses, mads, r2s)
+
+    return model_data
 
 
 def callbacks(cfg, run):
@@ -314,60 +329,73 @@ def print_times(times):
     return tm
 
 
-def print_scores(runs, lr, mses, maes, rmses, r2s):
+def print_trace_scores(mses,maes,rmses,mads,r2s):
+    print('================ TRACE SCORES ===================')
+    print(f"[CSV_mses] {mses}")
+    print(f"[CSV_maes] {maes}")
+    print(f"[CSV_rmses] {rmses}")
+    print(f"[CSV_mads] {mads}")
+    print(f"[CSV_r2s] {r2s}")
+
+
+def print_scores(runs, lr, mses, maes, rmses, r2s, mads):
     p = '2f'
     m = 100
     print(f"Results after {runs} [lr: {lr}] x10¯²")
     print(f"MSE  {mses.mean()*m:.{p}}±{mses.std()*m:.{p}}")
     print(f"MAE  {maes.mean()*m:.{p}}±{maes.std()*m:.{p}}")
     print(f"RMSE {rmses.mean()*m:.{p}}±{rmses.std()*m:.{p}}")
+    print(f"MAD {mads.mean() * m:.{p}}±{mads.std() * m:.{p}}")
     print(f"R2   {r2s.mean():.4f}±{r2s.std():.4f}")
     print('--------------------------------------------------------')
-    print(f"[CSV] {mses.mean() * m:.{p}}±{mses.std() * m:.{p}},{maes.mean() * m:.{p}}±{maes.std() * m:.{p}},{rmses.mean() * m:.{p}}±{rmses.std() * m:.{p}},{r2s.mean():.4f}±{r2s.std():.4f}")
+    print(f"[CSV] {mses.mean() * m:.{p}}±{mses.std() * m:.{p}},{maes.mean() * m:.{p}}±{maes.std() * m:.{p}},{rmses.mean() * m:.{p}}±{rmses.std() * m:.{p}},{mads.mean() * m:.{p}}±{mads.std() * m:.{p}},{r2s.mean():.4f}±{r2s.std():.4f}")
 
 
-def do_xgbr_training_runs(d, cfg, params):
-    print(f'Using device: {cfg.device_name}')
-    with tf.device(cfg.device_name):
-        mses = np.array([])
-        maes = np.array([])
-        rmses = np.array([])
-        r2s = np.array([])
-        times = np.array([])
+def xgbr_params(cfg):
+    n_iter_no_change = int(0.2 * cfg.epochs)
+    if cfg.no_early_stopping:
+        n_iter_no_change = None
 
-        for i in range(cfg.num_runs):
-            print('***Run #%d***' % i)
-            start = time.perf_counter()
+    params = {'n_estimators': cfg.epochs,
+              'max_depth': 8,
+              'min_samples_split': 5,
+              'validation_fraction': 0.2,
+              'n_iter_no_change': n_iter_no_change,
+              'learning_rate': cfg.learning_rate,
+              'loss': 'ls',
+              }
 
-            model = ensemble.GradientBoostingRegressor(**params)
-            model.fit(d.x_train, d.y_train)
+    return params
 
-            trace_model_filename = f'{model_filename(cfg, i)}.joblib'
-            dump(model, trace_model_filename)
-            print(f"#### dump model [{trace_model_filename}]")
 
-            outputs = model.predict(d.x_test)
+def do_xgbr_training_runs(d, cfg):
+    times = np.array([])
 
-            mse = mean_squared_error(d.y_test, outputs)
-            mae = mean_absolute_error(d.y_test, outputs)
-            rmse = sqrt(mse)
-            r2 = r2_score(d.y_test, outputs)
+    for i in range(cfg.num_runs):
+        print('***Run #%d***' % i)
+        start = time.perf_counter()
 
-            mses = np.append(mses, mse)
-            maes = np.append(maes, mae)
-            rmses = np.append(rmses, rmse)
-            r2s = np.append(r2s, r2)
+        params = xgbr_params(cfg)
+        model = ensemble.GradientBoostingRegressor(**params)
+        model.fit(d.x_train, d.y_train)
 
-            elapsed = time.perf_counter() - start
-            times = np.append(times, elapsed)
+        elapsed = time.perf_counter() - start
+        times = np.append(times, elapsed)
 
-        print('================ ARGS USED ===================')
-        print(cfg.args)
-        print('================ RESULTS ===================')
-        print_scores(cfg.num_runs, cfg.learning_rate, mses, maes, rmses, r2s)
-        print_times(times)
+        # retrieve performance metrics
+        train_score = model.train_score_
+        val_score = np.zeros((params['n_estimators'],), dtype=np.float64)
+        for k, y_pred in enumerate(model.staged_predict(d.x_val)):
+            val_score[k] = model.loss_(d.y_val, y_pred)
 
-        return model
+        dump_hist(cfg, i, train_score, val_score)
+
+        min_loss = min(train_score)
+        trace_model_filename = f'{model_filename(cfg, i)}_mse_{min_loss:.6f}.joblib'
+        dump(model, trace_model_filename)
+        print(f"#### dump model [{trace_model_filename}]")
+
+    print_times(times)
 
 
 def apply_isotonic_regression(df, dataset_name):

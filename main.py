@@ -145,19 +145,12 @@ if __name__ == '__main__':
 
         if skip_training_over:
             print("#### SKIP TRAINING ####")
-            models = t.load_xgbr_models_data(cfg)
-            t.do_xgbr_scoring_over(d, cfg, models)
-            model = t.load_xgbr_model_data(cfg)
         else:
-            params = {'n_estimators': epochs,
-                      'max_depth': 8,
-                      'min_samples_split': 5,
-                      'validation_fraction': 0.2,
-                      'n_iter_no_change': int(0.2 * epochs),
-                      'learning_rate': learning_rate,
-                      'loss': 'ls',
-                      }
-            model = t.do_xgbr_training_runs(d, cfg, params)
+            t.do_xgbr_training_runs(d, cfg)
+
+        models = t.load_xgbr_models_data(cfg)
+        model_data = t.do_xgbr_scoring_over(d, cfg, models)
+        model = t.get_best_model(model_data)
 
         outputs = model.predict(x_test)
 

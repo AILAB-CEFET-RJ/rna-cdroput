@@ -18,7 +18,7 @@ _MAP_MNEMONIC_NAMES = {
 
 _MAP_SCALER_NAMES = {
     'StandardScaler': 'Padrão',
-    'none': 'N.A.'
+    None: 'N.A.'
 }
 
 _MAP_DATASET_NAMES = {
@@ -140,7 +140,7 @@ def percent_distance_std(pred, real, bins):
 def get_best_model_file(model_files):
     model_map={}
     for m in model_files:
-        mse = float(m.split('mse')[1].split('_')[1])
+        mse = float(m.split('mse')[1].split('_')[1].split('.')[0])
         model_map[mse] = m
 
     models = {k: model_map[k] for k in sorted(model_map)} # sort by mse
@@ -269,12 +269,13 @@ def gen_table_report(dir):
                     }
                     tbl = tbl.append([data], ignore_index=True)
 
-    tbl = tbl.sort_values(['valset', 'method', 'dataset'], ascending=False)
+    tbl = tbl[tbl.dataset == "COIN/Teddy"]
+    tbl = tbl.sort_values(['valset', 'method', 'dataset'])
     print(tbl.info())
     print('=================================================================')
     print(tbl.to_csv(index=False))
     print('=================================================================')
-    print(tbl.to_latex(index=False))
+    print(tbl.to_latex(index=False).replace('±', '$\pm$'))
 
 
 def fix_time(time):
@@ -293,7 +294,6 @@ def fix_time(time):
     print(t, tstd)
 
     return t
-
 
 
 if __name__ == '__main__':
