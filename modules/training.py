@@ -183,7 +183,7 @@ def do_scoring_over(d, cfg, models):
             mae = mean_absolute_error(d.y_test, outputs)
             rmse = sqrt(mse)
             r2 = r2_score(d.y_test, outputs)
-            mad = score_mad(d.y_test, outputs)
+            mad = score_mad(d.y_test.flatten(), outputs.flatten())
 
             mses = np.append(mses, mse)
             maes = np.append(maes, mae)
