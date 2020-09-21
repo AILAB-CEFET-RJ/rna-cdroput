@@ -39,6 +39,7 @@ def parser():
    parser.add_argument('-dataset', metavar='DS', help='Dataset to use [teddy|happy|kaggle|kaggle_bkp].')
    parser.add_argument('-model', metavar='MODEL', help='Model mnemonic.')
    parser.add_argument('-gen_table', action='store_true', help='Generate table from out files.')
+   parser.add_argument('-gen_trace_table', action='store_true', help='Generate trace metrics table from out files.')
 
    return parser
 
@@ -269,7 +270,7 @@ def gen_table_report(dir):
                     }
                     tbl = tbl.append([data], ignore_index=True)
 
-    tbl = tbl[tbl.dataset == "COIN/Teddy"]
+    #tbl = tbl[tbl.dataset == "SDSS"]
     tbl = tbl.sort_values(['valset', 'method', 'dataset'])
     print(tbl.info())
     print('=================================================================')
@@ -279,21 +280,99 @@ def gen_table_report(dir):
 
 
 def fix_time(time):
-    times = time.split('±')
+    if ':' in time:
+        times = time.split('±')
 
-    d = times[0].split(' days, ')
-    t0 = d[1].split(':')
-    t1 = times[1].split(':')
+        d = times[0].split(' days, ')
+        t0 = d[1].split(':')
+        t1 = times[1].split(':')
 
-    t = timedelta(days=int(d[0]), hours=int(t0[0]), minutes=int(t0[1]), seconds= float(t0[2]))
-    tstd = timedelta(hours=int(t1[0]), minutes=int(t1[1]), seconds= float(t1[2]))
+        t = timedelta(days=int(d[0]), hours=int(t0[0]), minutes=int(t0[1]), seconds= float(t0[2]))
+        tstd = timedelta(hours=int(t1[0]), minutes=int(t1[1]), seconds= float(t1[2]))
 
-    t = round((t.total_seconds() / 1000) / 60)
-    tstd = (tstd.total_seconds() / 1000) / 60
+        t = round((t.total_seconds() / 1000) / 60)
+        #tstd = (tstd.total_seconds() / 1000) / 60
 
-    print(t, tstd)
+        #print(t, tstd)
+
+    else:
+        times = time.split('±')
+
+        t = round(float(times[0]) / 60)
+        #tstd = round(float(times[1]) / 60)
+
+        #print(t, tstd)
 
     return t
+
+
+def gen_trace_table_report(dir):
+    metrics = 'mses'
+    outs_file_mask = f"{dir}/out_*"
+    outs_files = glob.glob(outs_file_mask)
+    outs_files.sort()
+
+    tbl = pd.DataFrame(columns=[
+        'valset', 'method', 'dataset',
+        f"{metrics[:-1]}_0",f"{metrics[:-1]}_1",
+        f"{metrics[:-1]}_2",f"{metrics[:-1]}_3",f"{metrics[:-1]}_4",
+        f"{metrics[:-1]}_5",f"{metrics[:-1]}_6",f"{metrics[:-1]}_7",
+        f"{metrics[:-1]}_8",f"{metrics[:-1]}_9"
+    ])
+
+    records = {}
+    next_line=False
+
+    for out in outs_files:
+        with open(out, 'r') as file:
+            infos = out.split('/')[-1].split('_')
+            valset = '-'
+            if len(infos) > 4:
+                valset = infos[-1].split('.')[0]
+            method = _MAP_MNEMONIC_NAMES[infos[1]]
+            dataset = _MAP_DATASET_NAMES[infos[3].split('.')[0]]
+
+            for line in file:
+                if f"[CSV_{metrics}]" in line:
+                    records[f"{method}_{dataset}_{valset}"] = line.replace("\n", '')
+                    next_line = True
+                elif next_line:
+                    records[f"{method}_{dataset}_{valset}"] = records[f"{method}_{dataset}_{valset}"] + line.replace("\n", '')
+                    next_line = False
+
+            if not records:
+                continue
+
+    for k, v in records.items():
+        infos = k.split('_')
+        d = v.split(f"[CSV_{metrics}] ")[1]\
+            .replace('[', '')\
+            .replace(']', '')\
+            .split(' ')
+
+        data = {
+            'method': infos[0],
+            'dataset': infos[1],
+            'valset': infos[2],
+            f"{metrics[:-1]}_0": d[0],
+            f"{metrics[:-1]}_1": d[1],
+            f"{metrics[:-1]}_2": d[2],
+            f"{metrics[:-1]}_3": d[3],
+            f"{metrics[:-1]}_4": d[4],
+            f"{metrics[:-1]}_5": d[5],
+            f"{metrics[:-1]}_6": d[6],
+            f"{metrics[:-1]}_7": d[7],
+            f"{metrics[:-1]}_8": d[8],
+            f"{metrics[:-1]}_9": d[9],
+        }
+        tbl = tbl.append([data], ignore_index=True)
+
+
+    #tbl = tbl[tbl.dataset == "SDSS"]
+    tbl = tbl.sort_values(['valset', 'method', 'dataset'])
+    print(tbl.info())
+    print('=================================================================')
+    print(tbl.to_csv(index=False))
 
 
 if __name__ == '__main__':
@@ -310,6 +389,7 @@ if __name__ == '__main__':
     metric = args.metric
     features = args.f
     gen_table = args.gen_table
+    gen_trace_metrics_table = args.gen_trace_table
 
     if std_perc_report:
         gen_std_perc_report(files_dir)
@@ -322,5 +402,9 @@ if __name__ == '__main__':
 
     if gen_table:
         gen_table_report(files_dir)
+
+    if gen_trace_metrics_table:
+        gen_trace_table_report(files_dir)
+
 
 
