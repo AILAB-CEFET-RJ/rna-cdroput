@@ -4,6 +4,7 @@ import pandas as pd
 import glob
 
 from datetime import timedelta
+from modules.plot import plot_jointd_sct_m
 
 import matplotlib.pyplot as plt
 
@@ -37,11 +38,64 @@ def parser():
    parser.add_argument('-sc', metavar='SCALER', help='Scaler class used.')
    parser.add_argument('-f', metavar='FEATURES', help='Number of features.')
    parser.add_argument('-dataset', metavar='DS', help='Dataset to use [teddy|happy|kaggle|kaggle_bkp].')
+   parser.add_argument('-valset', metavar='VS', help='Valset to use [B|C|D].')
    parser.add_argument('-model', metavar='MODEL', help='Model mnemonic.')
    parser.add_argument('-gen_table', action='store_true', help='Generate table from out files.')
    parser.add_argument('-gen_trace_table', action='store_true', help='Generate trace metrics table from out files.')
+   parser.add_argument('-dzm_bias', action='store_true', help='Generate delta z mean for bias.')
+   parser.add_argument('-residual_plot', action='store_true', help='Generate residual plot.')
 
    return parser
+
+
+def dzm_bias_report(files_dir):
+    tbl = pd.DataFrame(columns=[
+        'valset', 'method', 'dataset', 'bias'
+    ])
+
+    pred_file_mask = f"{files_dir}/real_*"
+    pred_files = glob.glob(pred_file_mask)
+    for file in pred_files:
+        print(f"######## {file} ########")
+        infos = file.split('/')[-1].split('_')
+
+        valset = '-'
+        if len(infos) == 14:
+            valset = infos[13]
+
+        pred_df = pd.read_csv(f"{file}")
+        zspec = pred_df['Pred']
+        zphot = pred_df['Real']
+        bias = (zphot - zspec).mean()
+
+        data = {
+            'valset': valset, 'method': infos[3], 'dataset': infos[5], 'bias': bias
+        }
+
+        tbl = tbl.append([data], ignore_index=True)
+
+
+    dataset = 'teddy'
+    valset = 'C'
+    #tbl = tbl[tbl.dataset == dataset]
+    #tbl = tbl[tbl.valset == valset]
+    tbl = tbl.sort_values(['valset', 'method', 'dataset'])
+    print(tbl.info())
+    print('=================================================================')
+    print(tbl.to_csv(index=False))
+    print('=================================================================')
+    print(tbl.to_latex(index=False))
+
+    fig, ax = plt.subplots()
+    plt.barh(tbl.method, tbl.bias)
+    ax.set_title(f"{_MAP_DATASET_NAMES[dataset]} | {valset}")
+    #ax.set_title(f"{_MAP_DATASET_NAMES[dataset]}")
+    ax.set_xlabel('Média Delta Z')
+    ax.set_ylabel('Método')
+
+    plt.show()
+
+
 
 
 def gen_std_perc_report(files_dir):
@@ -150,7 +204,7 @@ def get_best_model_file(model_files):
     return model_map[best]
 
 
-def gen_img_hist_report(files_dir, mnemonic, scaler, dataset, metric, features):
+def gen_img_hist_report(files_dir, mnemonic, scaler, dataset, metric):
     model_file_mask = f"{files_dir}/model_{mnemonic}_{dataset}_{scaler}*"
     model_files = glob.glob(model_file_mask)
     model_files.sort()
@@ -231,6 +285,27 @@ def gen_heatmap_report(files_dir, mnemonic, scaler, dataset, extent=None):
     plt.show()
 
 
+def residual_plot_report(files_dir, mnemonic, scaler, dataset, valset):
+    preds_file_mask = f"{files_dir}/real_x_pred_{mnemonic}_{scaler}_{dataset}*"
+    preds_files = glob.glob(preds_file_mask)
+
+    if valset:
+        preds_files = [k for k in preds_files if f"valset_{valset}" in k]
+
+    preds_file = preds_files[0]
+    print(f"######## {preds_file.split('/')[-1]} ########")
+
+    data = pd.read_csv(preds_file)
+    print(data.info())
+    print(data.head())
+
+    zspec = data['Pred']
+    zphot = data['Real']
+    residual = zphot - zspec
+
+    plot_jointd_sct_m(residual, zspec, 'Residual (Z-Phot - Z-Spec)', 'Z-Spec')
+
+
 def gen_table_report(dir):
     outs_file_mask = f"{dir}/out_*"
     outs_files = glob.glob(outs_file_mask)
@@ -238,7 +313,7 @@ def gen_table_report(dir):
 
     tbl = pd.DataFrame(columns=[
         'valset', 'method', 'dataset',
-        'mse', 'mae', 'rmse', 'r2', 'time'
+        'mse', 'mae', 'rmse', 'mad','r2', 'time'
     ])
 
     timereg = {}
@@ -265,7 +340,7 @@ def gen_table_report(dir):
                         'method': method,
                         'dataset': dataset,
                         'valset': valset,
-                        'mse': d[0], 'mae': d[1], 'rmse': d[2], 'r2': d[3],
+                        'mse': d[0], 'mae': d[1], 'rmse': d[2], 'mad': d[3],'r2': d[-1],
                         'time': timereg[f"{method}_{dataset}"]
                     }
                     tbl = tbl.append([data], ignore_index=True)
@@ -345,7 +420,9 @@ def gen_trace_table_report(dir):
 
     for k, v in records.items():
         infos = k.split('_')
-        d = v.split(f"[CSV_{metrics}] ")[1]\
+        d = v.split(f"[CSV_{metrics}] ")[1] \
+            .replace('   ', ' ')\
+            .replace('  ', ' ')\
             .replace('[', '')\
             .replace(']', '')\
             .split(' ')
@@ -387,15 +464,17 @@ if __name__ == '__main__':
     scaler = args.sc
     dataset = args.dataset
     metric = args.metric
-    features = args.f
     gen_table = args.gen_table
     gen_trace_metrics_table = args.gen_trace_table
+    dzm_bias = args.dzm_bias
+    residual_plot = args.residual_plot
+    valset = args.valset
 
     if std_perc_report:
         gen_std_perc_report(files_dir)
 
     if img_hist_report:
-        gen_img_hist_report(files_dir, mnemonic, scaler, dataset, metric, features)
+        gen_img_hist_report(files_dir, mnemonic, scaler, dataset, metric)
 
     if heatmap:
         gen_heatmap_report(files_dir, mnemonic, scaler, dataset, metric)
@@ -405,6 +484,12 @@ if __name__ == '__main__':
 
     if gen_trace_metrics_table:
         gen_trace_table_report(files_dir)
+
+    if dzm_bias:
+        dzm_bias_report(files_dir)
+
+    if residual_plot:
+        residual_plot_report(files_dir, mnemonic, scaler, dataset, valset)
 
 
 
