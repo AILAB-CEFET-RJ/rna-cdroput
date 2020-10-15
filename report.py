@@ -36,7 +36,9 @@ def parser():
    parser.add_argument('-hm', action='store_true', help='Plot results heatmap.')
    parser.add_argument('-metric', metavar='METRIC', help='Select metric to show in [-img_hist]. Default is loss.')
    parser.add_argument('-sc', metavar='SCALER', help='Scaler class used.')
+   parser.add_argument('-run', metavar='RUN', type=int, help='Select run.')
    parser.add_argument('-f', metavar='FEATURES', help='Number of features.')
+   parser.add_argument('-e', metavar='EPOCHS', help='Number of epochs.')
    parser.add_argument('-dataset', metavar='DS', help='Dataset to use [teddy|happy|kaggle|kaggle_bkp].')
    parser.add_argument('-valset', metavar='VS', help='Valset to use [B|C|D].')
    parser.add_argument('-model', metavar='MODEL', help='Model mnemonic.')
@@ -204,30 +206,42 @@ def get_best_model_file(model_files):
     return model_map[best]
 
 
-def gen_img_hist_report(files_dir, mnemonic, scaler, dataset, metric):
+def gen_img_hist_report(files_dir, mnemonic, scaler, dataset, metric, epochs, run):
     model_file_mask = f"{files_dir}/model_{mnemonic}_{dataset}_{scaler}*"
+    if epochs:
+        model_file_mask = f"{files_dir}/model_{mnemonic}_{dataset}_{scaler}_epochs_{epochs}*"
+
     model_files = glob.glob(model_file_mask)
     model_files.sort()
 
     if len(model_files) > 0:
         best_model_file = get_best_model_file(model_files)
         idx = best_model_file.split('run_')[1].split('_')[0]
-        best_hist_file = glob.glob(f"{files_dir}/hist_{mnemonic}_{scaler}_{dataset}*_run_{idx}")[0]
+        if run:
+            idx = run
+        best_hist_file_mask = f"{files_dir}/hist_{mnemonic}_{scaler}_{dataset}*_run_{idx}"
+        if epochs:
+            best_hist_file_mask = f"{files_dir}/hist_{mnemonic}_{scaler}_{dataset}_epochs_{epochs}*_run_{idx}"
+        best_hist_file = glob.glob(best_hist_file_mask)[0]
         print(f"######## {best_hist_file.split('/')[-1]} ########")
     else:
         print(">>> MODEL MISS !!!")
+        idx = 10
         best_hist_file = get_hist_model_miss_report(files_dir, mnemonic, scaler, dataset)
 
     hist = pd.read_csv(best_hist_file)
     print(hist.info())
     print(hist.head())
+    print(f"Max MSE: {hist['mse'].max()}")
+    print(f"Min MSE: {hist['mse'].min()}")
 
     if metric == None:
         metric = 'loss'
 
     fig, ax = plt.subplots()
     hist[[metric, f"val_{metric}"]].plot.line(ax=ax)
-    ax.set_title(f"{_MAP_DATASET_NAMES[dataset]}: {mnemonic} | Scaler[{_MAP_SCALER_NAMES[scaler]}]")
+    ax.set_title(f"{_MAP_DATASET_NAMES[dataset]}: {mnemonic} | Scaler[{_MAP_SCALER_NAMES[scaler]}] | Rodada {idx}")
+    ax.legend(["train_loss", "val_loss"])
     ax.set_xlabel('Épocas')
     ax.set_ylabel('Erros')
     plt.show()
@@ -298,12 +312,13 @@ def residual_plot_report(files_dir, mnemonic, scaler, dataset, valset):
     data = pd.read_csv(preds_file)
     print(data.info())
     print(data.head())
+    print(f"Max MSE: {data['mse'].max()}")
 
     zspec = data['Pred']
     zphot = data['Real']
     residual = zphot - zspec
 
-    plot_jointd_sct_m(residual, zspec, 'Residual (Z-Phot - Z-Spec)', 'Z-Spec')
+    plot_jointd_sct_m(residual, zspec, 'Residual (Z-Phot - Z-Spec)', 'Z-Spec', ylim=(0, 0.6))
 
 
 def gen_table_report(dir):
@@ -345,8 +360,10 @@ def gen_table_report(dir):
                     }
                     tbl = tbl.append([data], ignore_index=True)
 
-    #tbl = tbl[tbl.dataset == "SDSS"]
+    tbl = tbl[tbl.dataset == "SDSS"]
+    #tbl = tbl[tbl.valset == "D"]
     tbl = tbl.sort_values(['valset', 'method', 'dataset'])
+    tbl.drop(columns=['dataset', 'valset'], axis=1, inplace=True)
     print(tbl.info())
     print('=================================================================')
     print(tbl.to_csv(index=False))
@@ -469,12 +486,14 @@ if __name__ == '__main__':
     dzm_bias = args.dzm_bias
     residual_plot = args.residual_plot
     valset = args.valset
+    epochs = args.e
+    run = args.run
 
     if std_perc_report:
         gen_std_perc_report(files_dir)
 
     if img_hist_report:
-        gen_img_hist_report(files_dir, mnemonic, scaler, dataset, metric)
+        gen_img_hist_report(files_dir, mnemonic, scaler, dataset, metric, epochs, run)
 
     if heatmap:
         gen_heatmap_report(files_dir, mnemonic, scaler, dataset, metric)
