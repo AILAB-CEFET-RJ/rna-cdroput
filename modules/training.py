@@ -3,6 +3,7 @@ import pandas as pd
 import os
 import glob
 import time
+import random
 
 from math import sqrt
 from joblib import dump, load
@@ -356,6 +357,8 @@ def xgbr_params(cfg):
     if cfg.no_early_stopping:
         n_iter_no_change = None
 
+    rstate = random.randint(0, 1000)
+    print(f"XGB at random_state: {rstate}")
     params = {'n_estimators': cfg.epochs,
               'max_depth': 8,
               'min_samples_split': 5,
@@ -363,6 +366,7 @@ def xgbr_params(cfg):
               'n_iter_no_change': n_iter_no_change,
               'learning_rate': cfg.learning_rate,
               'loss': 'ls',
+              'random_state': rstate
               }
 
     return params
