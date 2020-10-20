@@ -1,3 +1,4 @@
+import random
 import tensorflow as tf
 from tensorflow.keras.layers import Layer
 
@@ -17,6 +18,8 @@ def select_dropout(dropout_opt):
         return ErrorBasedDropoutDT()
     if dropout_opt == 'ErrorBasedInvertedDropout':
         return ErrorBasedInvertedDropout()
+    if dropout_opt == 'ErrorBasedInvertedRandomDropout':
+        return ErrorBasedInvertedRandomDropout()
 
 
 def select_scaler(scaler_opt):
@@ -163,6 +166,51 @@ class ErrorBasedInvertedDropout(tf.keras.layers.Layer):
 
         if training:
             output = droppedout_ugriz(ugriz, errs)
+        else:
+            output = ugriz
+
+        return output
+
+
+class ErrorBasedInvertedRandomDropout(tf.keras.layers.Layer):
+    def __init__(self, **kwargs):
+        super(ErrorBasedInvertedRandomDropout, self).__init__(**kwargs)
+        print('ErrorBasedInvertedRandomDropout')
+
+    def call(self, inputs, training=None):
+        NUM_BANDS = 5
+        ugriz = inputs[:, :NUM_BANDS]
+        errs = inputs[:, NUM_BANDS:2 * NUM_BANDS]
+        expErrs = inputs[:, 2 * NUM_BANDS:]
+
+
+        def droppedout_ugriz(ugriz, errs):
+            ones = tf.ones(shape=(1, NUM_BANDS), dtype=tf.dtypes.float32)
+            sfmax = tf.nn.softmax(tf.math.divide(tf.math.subtract(errs, expErrs), errs))
+            keep_probs = tf.math.subtract(ones, sfmax[0])
+            rnd_unif = tf.random.uniform(shape=(1, NUM_BANDS), dtype=tf.dtypes.float32)
+            mask = tf.math.greater(keep_probs, rnd_unif)
+            casted_mask = tf.cast(mask, dtype=tf.dtypes.float32)
+
+            masked_input = tf.math.multiply(ugriz, casted_mask)
+
+            keep_probs_mean = tf.math.reduce_mean(keep_probs)
+
+            masked_input = tf.math.divide(masked_input, keep_probs_mean)
+
+            return masked_input
+
+        if training:
+            n = random.randint(1, 11)  # sorteia um inteiro entre 1 e 10
+            even = n % 2 == 0  # checa se e par
+
+            if even:
+                print('Using Custom Dropout')
+                output = droppedout_ugriz(ugriz, errs)
+            else:
+                print('Dropout off')
+                output = ugriz
+
         else:
             output = ugriz
 

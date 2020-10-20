@@ -15,6 +15,8 @@ _MAP_MNEMONIC_NAMES = {
     'rnaad': 'RNA-AD',
     'rnariinv': 'RNA-RI-Inv',
     'rnaadinv': 'RNA-AD-Inv',
+    'rnarriinv': 'RNA-RRI-Inv',
+    'rnaradinv': 'RNA-RAD-Inv',
 }
 
 _MAP_SCALER_NAMES = {

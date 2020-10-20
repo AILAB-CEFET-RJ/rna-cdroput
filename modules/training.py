@@ -26,13 +26,15 @@ from modules.regularization import ErrorBasedDropoutIR
 from modules.regularization import ErrorBasedDropoutDT
 from modules.regularization import ErrorBasedDropoutZero
 from modules.regularization import ErrorBasedInvertedDropout
+from modules.regularization import ErrorBasedInvertedRandomDropout
 
 
 _MAP_METHOD_NAMES = {
     None : 'RNA',
     'ErrorBasedDropoutIR': 'RNA-RI',
     'ErrorBasedDropoutDT': 'RNA-AD',
-    'ErrorBasedInvertedDropout': 'RNA-'
+    'ErrorBasedInvertedDropout': 'RNA-',
+    'ErrorBasedInvertedRandomDropout': 'RNA-R'
 }
 
 
@@ -45,7 +47,8 @@ def custom_layer_register():
         "ErrorBasedDropoutIR": ErrorBasedDropoutIR,
         "ErrorBasedDropoutDT": ErrorBasedDropoutDT,
         "ErrorBasedDropoutZero": ErrorBasedDropoutZero,
-        "ErrorBasedInvertedDropout": ErrorBasedInvertedDropout
+        "ErrorBasedInvertedDropout": ErrorBasedInvertedDropout,
+        "ErrorBasedInvertedRandomDropout": ErrorBasedInvertedRandomDropout
     }
 
 
