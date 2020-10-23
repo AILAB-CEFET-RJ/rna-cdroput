@@ -146,6 +146,14 @@ def load_models_data(cfg):
     return models
 
 
+def load_model_data(model_file):
+    with keras.utils.custom_object_scope(custom_layer_register()):
+        model = tf.keras.models.load_model(model_file)
+        print(f">>>  {model_file} Loaded !")
+
+    return model
+
+
 def load_xgbr_models_data(cfg):
     models = []
     model_file_mask = f"{model_filename(cfg, None)}*"

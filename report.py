@@ -44,6 +44,7 @@ def parser():
    parser.add_argument('-dataset', metavar='DS', help='Dataset to use [teddy|happy|kaggle|kaggle_bkp].')
    parser.add_argument('-valset', metavar='VS', help='Valset to use [B|C|D].')
    parser.add_argument('-model', metavar='MODEL', help='Model mnemonic.')
+   parser.add_argument('-pf', metavar='PF', help='Preds file.')
    parser.add_argument('-gen_table', action='store_true', help='Generate table from out files.')
    parser.add_argument('-gen_trace_table', action='store_true', help='Generate trace metrics table from out files.')
    parser.add_argument('-dzm_bias', action='store_true', help='Generate delta z mean for bias.')
@@ -259,12 +260,16 @@ def get_hist_model_miss_report(files_dir, mnemonic, scaler, dataset):
     return last_hist_file
 
 
-def gen_heatmap_report(files_dir, mnemonic, scaler, dataset, extent=None):
-    preds_file_mask = f"{files_dir}/real_x_pred_{mnemonic}_{scaler}_{dataset}*"
-    preds_files = glob.glob(preds_file_mask)
+def gen_heatmap_report(preds_file, files_dir, mnemonic, scaler, dataset, valset, extent=None):
+    if not preds_file:
+        preds_file_mask = f"{files_dir}/real_x_pred_{mnemonic}_{scaler}_{dataset}*"
+        if valset:
+            preds_file_mask = f"{files_dir}/real_x_pred_{mnemonic}_{scaler}_{dataset}*{valset}"
 
-    preds_file = preds_files[0]
-    print(f"######## {preds_file.split('/')[-1]} ########")
+        preds_files = glob.glob(preds_file_mask)
+
+        preds_file = preds_files[0]
+        print(f"######## {preds_file.split('/')[-1]} ########")
 
     data = pd.read_csv(preds_file)
     print(data.info())
@@ -293,34 +298,41 @@ def gen_heatmap_report(files_dir, mnemonic, scaler, dataset, extent=None):
 
         extent = [x_start, x_end, y_start, y_end]
 
+    title = f"{_MAP_DATASET_NAMES[dataset]}: {mnemonic} | Scaler[{_MAP_SCALER_NAMES[scaler]}]"
+    if valset:
+        title = f"{_MAP_DATASET_NAMES[dataset]} {valset}: {mnemonic} | Scaler[{_MAP_SCALER_NAMES[scaler]}]"
+
     im = plt.imshow(heatmap.T, extent=extent, origin='lower')
     im.set_cmap('gist_heat_r')
-    ax.set_title(f"{_MAP_DATASET_NAMES[dataset]}: {mnemonic} | Scaler[{_MAP_SCALER_NAMES[scaler]}]")
+    ax.set_title(title)
     ax.set_xlabel('Z-Spec')
     ax.set_ylabel('Z-Phot')
     plt.show()
 
 
-def residual_plot_report(files_dir, mnemonic, scaler, dataset, valset):
-    preds_file_mask = f"{files_dir}/real_x_pred_{mnemonic}_{scaler}_{dataset}*"
-    preds_files = glob.glob(preds_file_mask)
+def residual_plot_report(preds_file, files_dir, mnemonic, scaler, dataset, valset):
+    if not preds_file:
+        preds_file_mask = f"{files_dir}/real_x_pred_{mnemonic}_{scaler}_{dataset}*"
+        if valset:
+            preds_file_mask = f"{files_dir}/real_x_pred_{mnemonic}_{scaler}_{dataset}*{valset}"
 
-    if valset:
-        preds_files = [k for k in preds_files if f"valset_{valset}" in k]
+        preds_files = glob.glob(preds_file_mask)
 
-    preds_file = preds_files[0]
-    print(f"######## {preds_file.split('/')[-1]} ########")
+        if valset:
+            preds_files = [k for k in preds_files if f"valset_{valset}" in k]
+
+        preds_file = preds_files[0]
+        print(f"######## {preds_file.split('/')[-1]} ########")
 
     data = pd.read_csv(preds_file)
     print(data.info())
     print(data.head())
-    print(f"Max MSE: {data['mse'].max()}")
 
     zspec = data['Pred']
     zphot = data['Real']
     residual = zphot - zspec
 
-    plot_jointd_sct_m(residual, zspec, 'Residual (Z-Phot - Z-Spec)', 'Z-Spec', ylim=(0, 0.6))
+    plot_jointd_sct_m(residual, zspec, 'Residual (Z-Phot - Z-Spec)', 'Z-Spec', ylim=(0, 0.6), xlim=(-.5, .5))
 
 
 def gen_table_report(dir):
@@ -362,8 +374,8 @@ def gen_table_report(dir):
                     }
                     tbl = tbl.append([data], ignore_index=True)
 
-    tbl = tbl[tbl.dataset == "SDSS"]
-    #tbl = tbl[tbl.valset == "D"]
+    tbl = tbl[tbl.dataset == "COIN/Happy"]
+    tbl = tbl[tbl.valset == "D"]
     tbl = tbl.sort_values(['valset', 'method', 'dataset'])
     tbl.drop(columns=['dataset', 'valset'], axis=1, inplace=True)
     print(tbl.info())
@@ -490,6 +502,7 @@ if __name__ == '__main__':
     valset = args.valset
     epochs = args.e
     run = args.run
+    pred_file = args.pf
 
     if std_perc_report:
         gen_std_perc_report(files_dir)
@@ -498,7 +511,7 @@ if __name__ == '__main__':
         gen_img_hist_report(files_dir, mnemonic, scaler, dataset, metric, epochs, run)
 
     if heatmap:
-        gen_heatmap_report(files_dir, mnemonic, scaler, dataset, metric)
+        gen_heatmap_report(pred_file, files_dir, mnemonic, scaler, dataset, valset)
 
     if gen_table:
         gen_table_report(files_dir)
@@ -510,7 +523,7 @@ if __name__ == '__main__':
         dzm_bias_report(files_dir)
 
     if residual_plot:
-        residual_plot_report(files_dir, mnemonic, scaler, dataset, valset)
+        residual_plot_report(pred_file, files_dir, mnemonic, scaler, dataset, valset)
 
 
 
