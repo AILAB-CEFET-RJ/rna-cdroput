@@ -78,14 +78,14 @@ def plot_jointd_sct(dataframe, xband, yband, xlim=None, ylim=None):
 
     plt.show()
 
-def plot_jointd_sct_m(xdf, ydf,  xlabel, ylabel, xlim=None, ylim=None):
+def plot_jointd_sct_m(xdf, ydf, title, xlabel, ylabel, xlim=None, ylim=None, s=0.5, save=None):
     xdf.reset_index(drop=True, inplace=True)
     ydf.reset_index(drop=True, inplace=True)
     x = xdf
     y = ydf
 
     # definitions for the axes
-    spacing = 0.035
+    spacing = 0.02
     left, width = 0.1, 0.65
     bottom, height = 0.1, 0.65
     bottom_h = left_h = left + width + 0.02
@@ -101,6 +101,7 @@ def plot_jointd_sct_m(xdf, ydf,  xlabel, ylabel, xlim=None, ylim=None):
     axHistx = plt.axes(rect_histx)
     axHisty = plt.axes(rect_histy)
 
+    axHistx.set_title(title, fontsize=24, color='blue')
     axScatter.set_xlabel(xlabel, fontsize=22, color='blue')
     axScatter.set_ylabel(ylabel, fontsize=22, color='blue')
 
@@ -114,7 +115,7 @@ def plot_jointd_sct_m(xdf, ydf,  xlabel, ylabel, xlim=None, ylim=None):
     axHisty.yaxis.set_major_formatter(nullfmt)
 
     # the scatter plot:
-    axScatter.scatter(x, y, c='blue', s=0.5, alpha=0.03)
+    axScatter.scatter(x, y, c='blue', s=s, alpha=0.03)
 
     binwidth = 0.05
     xymax = np.max([np.max(np.fabs(x)), np.max(np.fabs(y))])
@@ -150,7 +151,11 @@ def plot_jointd_sct_m(xdf, ydf,  xlabel, ylabel, xlim=None, ylim=None):
     axHistx.set_xlim(axScatter.get_xlim())
     axHisty.set_ylim(axScatter.get_ylim())
 
+    if save:
+        plt.savefig(save)
+
     plt.show()
+
 
 def plot_jointd_sct_m2(xdf, ydf,  xlabel, ylabel, xlim=None, ylim=None):
     xdf.reset_index(drop=True, inplace=True)

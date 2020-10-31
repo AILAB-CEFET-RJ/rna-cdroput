@@ -9,6 +9,9 @@ from modules.plot import plot_jointd_sct_m
 import matplotlib.pyplot as plt
 
 _MAP_MNEMONIC_NAMES = {
+    'xgb5': 'XGB05',
+    'xgb05': 'XGB05',
+    'xgb10': 'XGB10',
     'rna05': 'RNA05',
     'rna10': 'RNA10',
     'rnari': 'RNA-RI',
@@ -312,27 +315,36 @@ def gen_heatmap_report(preds_file, files_dir, mnemonic, scaler, dataset, valset,
 
 def residual_plot_report(preds_file, files_dir, mnemonic, scaler, dataset, valset):
     if not preds_file:
-        preds_file_mask = f"{files_dir}/real_x_pred_{mnemonic}_{scaler}_{dataset}*"
-        if valset:
-            preds_file_mask = f"{files_dir}/real_x_pred_{mnemonic}_{scaler}_{dataset}*{valset}"
-
+        preds_file_mask = f"{files_dir}/real_x_pred_*"
         preds_files = glob.glob(preds_file_mask)
+        for pf in preds_files:
+            file = pf.split('/')[-1]
+            print(f"######## {file} ########")
+            file_info = file.split("_")
+            mnemonic = file_info[3]
+            scaler = file_info[4]
+            dataset = file_info[5]
+            valset = None
+            if len(file_info) == 14:
+                valset = file_info[-1]
+            residual_plot_report(pf, None, mnemonic, scaler, dataset, valset)
 
+    else:
+        data = pd.read_csv(preds_file)
+        print(data.info())
+        print(data.head())
+
+        zspec = data['Pred']
+        zphot = data['Real']
+        residual = zphot - zspec
+
+        title = f"{mnemonic} | {_MAP_DATASET_NAMES[dataset]}"
+        save = f"{mnemonic}_{dataset}"
         if valset:
-            preds_files = [k for k in preds_files if f"valset_{valset}" in k]
-
-        preds_file = preds_files[0]
-        print(f"######## {preds_file.split('/')[-1]} ########")
-
-    data = pd.read_csv(preds_file)
-    print(data.info())
-    print(data.head())
-
-    zspec = data['Pred']
-    zphot = data['Real']
-    residual = zphot - zspec
-
-    plot_jointd_sct_m(residual, zspec, 'Residual (Z-Phot - Z-Spec)', 'Z-Spec', ylim=(0, 0.6), xlim=(-.5, .5))
+            title = f"{title}: {valset}"
+            save = f"{save}_{valset}"
+        plot_jointd_sct_m(residual, zspec, title, 'Residual (Z-Phot - Z-Spec)', 'Z-Spec', ylim=(0, 0.6), xlim=(-.5, .5), s=15)
+        #plot_jointd_sct_m(residual, zspec, title, 'Residual (Z-Phot - Z-Spec)', 'Z-Spec', ylim=(-.2, 1), xlim=(-1, 1), s=15)
 
 
 def gen_table_report(dir):

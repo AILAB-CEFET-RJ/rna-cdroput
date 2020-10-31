@@ -42,6 +42,7 @@ def build_cfg(D, neurons_0, neurons_1, learning_rate, epochs, num_runs, args):
     cfg.num_runs = num_runs
     cfg.args = args
     cfg.no_early_stopping = args.noes
+    cfg.include_errors = args.err
 
     return cfg
 
@@ -67,6 +68,8 @@ def parser():
    parser.add_argument('-mo', action='store_true', help='Reload all models trained stored previously. Skip train phase.')
    parser.add_argument('-ir', action='store_true', help='Apply Isotonic Regression.')
    parser.add_argument('-dt', action='store_true', help='Apply Decision Tree.')
+   parser.add_argument('-err', action='store_true', help='Include errors as features on custom ANNs.')
+
 
    return parser
 
@@ -112,6 +115,7 @@ if __name__ == '__main__':
     coin_val = args.coin_val
     skip_training_over = args.mo
     cuts = args.cut
+    include_errors = args.err
 
     seed(42)
     tf.random.set_seed(42)
@@ -156,10 +160,12 @@ if __name__ == '__main__':
 
     else:
         print("## Run ANN ##")
-        dropout = reg.select_dropout(dropout_opt)
+        dropout = reg.select_dropout(dropout_opt, include_errors)
         f = D
         if dropout:
             f = 5
+        if include_errors:
+            f = 10
 
         neurons_0 = math.ceil(2 * f / 3)
         neurons_1 = math.ceil(f / 2)

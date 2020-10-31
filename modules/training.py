@@ -24,7 +24,6 @@ from tensorflow.keras.callbacks import ModelCheckpoint
 
 from modules.regularization import ErrorBasedDropoutIR
 from modules.regularization import ErrorBasedDropoutDT
-from modules.regularization import ErrorBasedDropoutZero
 from modules.regularization import ErrorBasedInvertedDropout
 from modules.regularization import ErrorBasedInvertedRandomDropout
 
@@ -46,7 +45,6 @@ def custom_layer_register():
     return {
         "ErrorBasedDropoutIR": ErrorBasedDropoutIR,
         "ErrorBasedDropoutDT": ErrorBasedDropoutDT,
-        "ErrorBasedDropoutZero": ErrorBasedDropoutZero,
         "ErrorBasedInvertedDropout": ErrorBasedInvertedDropout,
         "ErrorBasedInvertedRandomDropout": ErrorBasedInvertedRandomDropout
     }
