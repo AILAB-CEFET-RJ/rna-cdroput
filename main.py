@@ -68,7 +68,7 @@ def parser():
    parser.add_argument('-mo', action='store_true', help='Reload all models trained stored previously. Skip train phase.')
    parser.add_argument('-ir', action='store_true', help='Apply Isotonic Regression.')
    parser.add_argument('-dt', action='store_true', help='Apply Decision Tree.')
-   parser.add_argument('-err', action='store_true', help='Include errors as features on custom ANNs.')
+   parser.add_argument('-ierr', action='store_true', help='Include errors as features on custom ANNs.')
 
 
    return parser
