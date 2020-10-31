@@ -42,7 +42,7 @@ def build_cfg(D, neurons_0, neurons_1, learning_rate, epochs, num_runs, args):
     cfg.num_runs = num_runs
     cfg.args = args
     cfg.no_early_stopping = args.noes
-    cfg.include_errors = args.err
+    cfg.include_errors = args.ierr
 
     return cfg
 
@@ -115,7 +115,7 @@ if __name__ == '__main__':
     coin_val = args.coin_val
     skip_training_over = args.mo
     cuts = args.cut
-    include_errors = args.err
+    include_errors = args.ierr
 
     seed(42)
     tf.random.set_seed(42)
