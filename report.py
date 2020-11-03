@@ -5,6 +5,7 @@ import glob
 
 from datetime import timedelta
 from modules.plot import plot_jointd_sct_m
+from modules.plot import heatmap_plot
 
 import matplotlib.pyplot as plt
 
@@ -336,15 +337,18 @@ def residual_plot_report(preds_file, files_dir, mnemonic, scaler, dataset, valse
 
         zspec = data['Pred']
         zphot = data['Real']
-        residual = zphot - zspec
+        residual = (zphot - zspec) / 1 + zspec
 
         title = f"{mnemonic} | {_MAP_DATASET_NAMES[dataset]}"
         save = f"{mnemonic}_{dataset}"
         if valset:
             title = f"{title}: {valset}"
             save = f"{save}_{valset}"
-        plot_jointd_sct_m(residual, zspec, title, 'Residual (Z-Phot - Z-Spec)', 'Z-Spec', ylim=(0, 0.6), xlim=(-.5, .5), s=15)
+        #plot_jointd_sct_m(zspec, residual, title, 'Z-Spec', '(Z-Phot - Z-Spec) / 1 + Z-Spec', xlim=(0, 0.6), ylim=(0, 1), s=15, save=save)
         #plot_jointd_sct_m(residual, zspec, title, 'Residual (Z-Phot - Z-Spec)', 'Z-Spec', ylim=(-.2, 1), xlim=(-1, 1), s=15)
+
+        heatmap_plot(zspec, residual, title, 'Z-Spec', '(Z-Phot - Z-Spec) / 1 + Z-Spec', save=save)
+
 
 
 def gen_table_report(dir):

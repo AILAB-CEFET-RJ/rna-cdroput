@@ -3,6 +3,45 @@ import numpy as np
 
 from matplotlib.ticker import NullFormatter
 
+def heatmap_plot(x, y, title, x_label, y_label, xlim=None, ylim=None, save=None):
+    fig, ax = plt.subplots(figsize=(12, 12))
+    heatmap, xedges, yedges = np.histogram2d(x, y, bins=500)
+
+    if (xlim == None and ylim == None):
+        x_start = np.amin(x)
+        y_start = np.amin(y)
+        x_end = np.amax(x)
+        y_end = np.amax(y)
+
+        if x_start < y_start:
+            y_start = x_start
+        else:
+            x_start = y_start
+
+        if x_end > y_end:
+            y_end = x_end
+        else:
+            x_end = y_end
+
+        extent = [x_start, x_end, y_start, y_end]
+    else:
+        extent = [xlim[0], xlim[1], ylim[0], ylim[1]]
+
+    im = plt.imshow(heatmap.T, extent=extent, origin='lower')
+    #im.set_cmap('nipy_spectral')
+    #im.set_cmap('flag')
+    im.set_cmap('gist_earth')
+    #im.set_cmap('terrain')
+    ax.set_title(title, fontsize=24, color='blue')
+    ax.set_xlabel(x_label, fontsize=22, color='blue')
+    ax.set_ylabel(y_label, fontsize=22, color='blue')
+    #plt.colorbar()
+
+    if save:
+        plt.savefig(save)
+
+    plt.show()
+
 
 def plot_jointd_sct(dataframe, xband, yband, xlim=None, ylim=None):
     dataframe.reset_index(drop=True, inplace=True)
