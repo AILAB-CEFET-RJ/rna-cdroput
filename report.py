@@ -16,11 +16,13 @@ _MAP_MNEMONIC_NAMES = {
     'rna05': 'RNA05',
     'rna10': 'RNA10',
     'rnari': 'RNA-RI',
+    'rnari10': 'RNA-RI10',
     'rnaad': 'RNA-AD',
     'rnariinv': 'RNA-RI-Inv',
     'rnaadinv': 'RNA-AD-Inv',
     'rnarriinv': 'RNA-RRI-Inv',
     'rnaradinv': 'RNA-RAD-Inv',
+    'rnaradinv10': 'RNA-RAD-Inv10'
 }
 
 _MAP_SCALER_NAMES = {
@@ -337,17 +339,17 @@ def residual_plot_report(preds_file, files_dir, mnemonic, scaler, dataset, valse
 
         zspec = data['Pred']
         zphot = data['Real']
-        residual = (zphot - zspec) / 1 + zspec
+        residual = (zphot - zspec) / (1 + zspec)
 
         title = f"{mnemonic} | {_MAP_DATASET_NAMES[dataset]}"
         save = f"{mnemonic}_{dataset}"
         if valset:
             title = f"{title}: {valset}"
             save = f"{save}_{valset}"
-        #plot_jointd_sct_m(zspec, residual, title, 'Z-Spec', '(Z-Phot - Z-Spec) / 1 + Z-Spec', xlim=(0, 0.6), ylim=(0, 1), s=15, save=save)
+        plot_jointd_sct_m(zspec, residual, title, 'Z-Spec', '(Z-Phot - Z-Spec) / (1 + Z-Spec)', xlim=(0, 0.6), ylim=(-.2, .2), s=15, save=save)
         #plot_jointd_sct_m(residual, zspec, title, 'Residual (Z-Phot - Z-Spec)', 'Z-Spec', ylim=(-.2, 1), xlim=(-1, 1), s=15)
 
-        heatmap_plot(zspec, residual, title, 'Z-Spec', '(Z-Phot - Z-Spec) / 1 + Z-Spec', save=save)
+        #heatmap_plot(zspec, residual, title, 'Z-Spec', '(Z-Phot - Z-Spec) / 1 + Z-Spec', save=save)
 
 
 
@@ -390,8 +392,8 @@ def gen_table_report(dir):
                     }
                     tbl = tbl.append([data], ignore_index=True)
 
-    tbl = tbl[tbl.dataset == "COIN/Happy"]
-    tbl = tbl[tbl.valset == "D"]
+    tbl = tbl[tbl.dataset == "COIN/Teddy"]
+    #tbl = tbl[tbl.valset == "D"]
     tbl = tbl.sort_values(['valset', 'method', 'dataset'])
     tbl.drop(columns=['dataset', 'valset'], axis=1, inplace=True)
     print(tbl.info())

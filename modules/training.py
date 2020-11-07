@@ -15,6 +15,8 @@ from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import r2_score
 from sklearn import ensemble
 
+from sklearn.linear_model import SGDRegressor
+
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
@@ -64,8 +66,8 @@ def model_name_nmnic(cfg):
         modelname=f"{modelname}RI-Inv"
     if cfg.args.dt:
         modelname=f"{modelname}AD-Inv"
-    if cfg.args.xgbr:
-        modelname = 'XGB'
+    if cfg.args.blm:
+        modelname = cfg.args.blm.upper()
     if not cfg.args.dp:
         modelname = f"{modelname}{cfg.args.f:02d}"
 
@@ -152,7 +154,7 @@ def load_model_data(model_file):
     return model
 
 
-def load_xgbr_models_data(cfg):
+def load_baseline_models_data(cfg):
     models = []
     model_file_mask = f"{model_filename(cfg, None)}*"
     model_files = glob.glob(model_file_mask)
@@ -224,7 +226,7 @@ def do_scoring_over(d, cfg, models):
         return model_data
 
 
-def do_xgbr_scoring_over(d, cfg, models):
+def do_baseline_scoring_over(d, cfg, models):
     mses = np.array([])
     maes = np.array([])
     rmses = np.array([])
@@ -405,6 +407,30 @@ def do_xgbr_training_runs(d, cfg):
 
         min_loss = min(train_score)
         trace_model_filename = f'{model_filename(cfg, i)}_mse_{min_loss:.6f}.joblib'
+        dump(model, trace_model_filename)
+        print(f"#### dump model [{trace_model_filename}]")
+
+    print_times(times)
+
+
+def do_lreg_training_runs(d, cfg):
+    times = np.array([])
+
+    for i in range(cfg.num_runs):
+        print('***Run #%d***' % i)
+        start = time.perf_counter()
+
+        model = SGDRegressor(
+            eta0=cfg.learning_rate, #learning rate bias
+            max_iter=cfg.epochs,
+            random_state=42
+        )
+        model.fit(d.x_train, d.y_train)
+
+        elapsed = time.perf_counter() - start
+        times = np.append(times, elapsed)
+
+        trace_model_filename = f'{model_filename(cfg, i)}.joblib'
         dump(model, trace_model_filename)
         print(f"#### dump model [{trace_model_filename}]")
 

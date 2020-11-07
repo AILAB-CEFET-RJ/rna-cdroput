@@ -57,7 +57,7 @@ def parser():
    parser.add_argument('-f', metavar='NF', type=int, help='Number of features.')
    parser.add_argument('-dataset', metavar='DS', help='Dataset to use [teddy|happy|kaggle|kaggle_bkp].')
    parser.add_argument('-gpu', metavar='DEVICE', help='GPU device name. Default is device name position 0.')
-   parser.add_argument('-xgbr', action='store_true', help='Run XGBoostRegressor instead of ANN.')
+   parser.add_argument('-blm', metavar='BASELINE', help='Run baseline methods [xgb|knn|rforest|lreg].')
    parser.add_argument('-noes', action='store_true', help='Disable early stop.')
    parser.add_argument('-subs', metavar='SIZE', type=int, help='Subsample size. If pass, dataset full size will be used.')
    parser.add_argument('-rmne', action='store_true', help='Remove negative entries.')
@@ -99,6 +99,34 @@ def apply_transforms(dataframe, dropout_opt, subsample, dataset_name, rmne, cuts
     return df
 
 
+def run_xgbr(d, cfg):
+    print("## Run XGBoostRegressor ##")
+    if skip_training_over:
+        print("#### SKIP TRAINING ####")
+    else:
+        t.do_xgbr_training_runs(d, cfg)
+    models = t.load_baseline_models_data(cfg)
+    model_data = t.do_baseline_scoring_over(d, cfg, models)
+    model = t.get_best_model(model_data)
+    outputs = model.predict(x_test)
+
+    return outputs
+
+
+def run_lreg(d, cfg):
+    print("## Run LinearRegressor ##")
+    if skip_training_over:
+        print("#### SKIP TRAINING ####")
+    else:
+        t.do_lreg_training_runs(d, cfg)
+    models = t.load_baseline_models_data(cfg)
+    model_data = t.do_baseline_scoring_over(d, cfg, models)
+    model = t.get_best_model(model_data)
+    outputs = model.predict(x_test)
+
+    return outputs
+
+
 if __name__ == '__main__':
     parser = parser()
     args = parser.parse_args()
@@ -110,12 +138,12 @@ if __name__ == '__main__':
     learning_rate = args.lr
     num_features = args.f
     scaler_opt = args.sc
-    xgboost = args.xgbr
     subsample = args.subs
     coin_val = args.coin_val
     skip_training_over = args.mo
     cuts = args.cut
     include_errors = args.ierr
+    baseline = args.blm
 
     seed(42)
     tf.random.set_seed(42)
@@ -143,22 +171,15 @@ if __name__ == '__main__':
     d = build_d(x_train, y_train, x_test, y_test, x_val, y_val)
     outputs = {}
 
-    if xgboost:
-        print("## Run XGBoostRegressor ##")
+    if baseline == 'xgb':
         cfg = build_cfg(D, 0, 0, learning_rate, epochs, num_runs, args)
+        outputs = run_xgbr(d, cfg)
 
-        if skip_training_over:
-            print("#### SKIP TRAINING ####")
-        else:
-            t.do_xgbr_training_runs(d, cfg)
+    if baseline == 'lreg':
+        cfg = build_cfg(D, 0, 0, learning_rate, epochs, num_runs, args)
+        outputs = run_lreg(d, cfg)
 
-        models = t.load_xgbr_models_data(cfg)
-        model_data = t.do_xgbr_scoring_over(d, cfg, models)
-        model = t.get_best_model(model_data)
-
-        outputs = model.predict(x_test)
-
-    else:
+    if baseline == None:
         print("## Run ANN ##")
         dropout = reg.select_dropout(dropout_opt, include_errors)
         f = D
