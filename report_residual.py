@@ -1,8 +1,11 @@
+import glob
 import argparse
 import numpy as np
 import pandas as pd
 
 import matplotlib.pyplot as plt
+from matplotlib import cm
+from matplotlib.colors import ListedColormap
 
 from matplotlib.ticker import NullFormatter
 
@@ -34,6 +37,11 @@ def parser():
    parser = argparse.ArgumentParser(description='Reports module')
    parser.add_argument('-file', metavar='RES', help='Result file.')
    parser.add_argument('-hm', action='store_true', help='Use Heatmap.')
+
+   parser.add_argument('-dir', metavar='DIR', help='Result dir.')
+   parser.add_argument('-dataset', metavar='DATASET', help='Dataset to group.')
+   parser.add_argument('-batch', action='store_true', help='Gen groupedimage.')
+   parser.add_argument('-ex', nargs='*', metavar='EXCLUDES', help='Exclude mnemonics.')
 
    return parser
 
@@ -117,6 +125,53 @@ def plot_jointd_sct_m(xdf, ydf, title, xlabel, ylabel, xlim=None, ylim=None, s=0
     plt.show()
 
 
+def heatmap_plot_batch(data, size, xlim=None, ylim=None, save=None):
+    gist_earth = cm.get_cmap('gist_earth', 500)
+    gist_rainbow = cm.get_cmap('rainbow', 500)
+    newcolors = gist_earth(np.linspace(0, 1, 500))
+    rainbow = gist_rainbow(np.linspace(0, 1, 500))
+    white = np.array([1, 1, 1, 1])
+    # white = newcolors[-6:, :]
+    red = rainbow[-180:, :]
+    newcolors[:6, :] = white
+    newcolors[-180:, :] = red
+    cmap = ListedColormap(newcolors)
+    bins = 500
+
+    fig, axs = plt.subplots(size[0], size[1], figsize=(16, 5 * size[0]))
+
+    k = 0
+    i = 0
+    for d in data:
+        x = d['zspec']
+        y = d['residual']
+        axs[k][i].hist2d(x, y, cmap=cmap, bins=bins)
+        axs[k][i].tick_params(axis='x', which='both', labelbottom=False)
+        axs[k][i].tick_params(axis='y', which='both', labelleft=False)
+
+        if i == 0:
+            axs[k][i].set_ylabel('(z-phot - z-spec) / (1 + z-spec)', fontsize=16, color='blue')
+            axs[k][i].tick_params(axis='y', which='both', labelleft=True, labelsize=14)
+
+        if k ==  size[0] -1:
+            axs[k][i].set_xlabel('z-spec', fontsize=16, color='blue')
+            axs[k][i].tick_params(axis='x', which='both', labelbottom=True, labelsize=14)
+
+        axs[k][i].set_title(d['title'], fontsize=18, color='blue', y=0.9)
+        axs[k][i].set_xlim(xlim)
+        axs[k][i].set_ylim(ylim)
+
+        i=i+1
+        if i == size[1]:
+            i=0
+            k=k+1
+
+    if save:
+        plt.savefig(save)
+
+    plt.show()
+
+
 def heatmap_plot(x, y, title, x_label, y_label, xlim=None, ylim=None, save=None):
     fig, ax = plt.subplots(figsize=(12, 12))
     heatmap, xedges, yedges = np.histogram2d(x, y, bins=500)
@@ -141,21 +196,23 @@ def heatmap_plot(x, y, title, x_label, y_label, xlim=None, ylim=None, save=None)
     else:
         extent = [xlim[0], xlim[1], ylim[0], ylim[1]]
 
-    im = plt.imshow(heatmap.T, extent=extent, origin='lower')
+    gist_earth = cm.get_cmap('gist_earth', 500)
+    gist_rainbow = cm.get_cmap('rainbow', 500)
+    newcolors = gist_earth(np.linspace(0, 1, 500))
+    rainbow = gist_rainbow(np.linspace(0, 1, 500))
+    white = np.array([1, 1, 1, 1])
+    #white = newcolors[-6:, :]
+    red = rainbow[-180:, :]
+    newcolors[:6, :] = white
+    newcolors[-180:, :] = red
+    cmap = ListedColormap(newcolors)
 
-    #paleta de cores pre determinada
-    #im.set_cmap('nipy_spectral')
-    #im.set_cmap('flag')
-    im.set_cmap('gist_earth')
-    #im.set_cmap('gist_earth_r')
-    #im.set_cmap('terrain')
+    ax.tick_params(axis='both', which='major', labelsize=20)
+    plt.imshow(heatmap.T, extent=extent, origin='lower', cmap=cmap)
 
     ax.set_title(title, fontsize=24, color='blue')
     ax.set_xlabel(x_label, fontsize=22, color='blue')
     ax.set_ylabel(y_label, fontsize=22, color='blue')
-
-    #legenda das cores
-    #plt.colorbar()
 
     if save:
         plt.savefig(save)
@@ -178,8 +235,8 @@ def residual_plot_report(result_file, use_heatmap):
     if len(file_info) == 14:
         valset = file_info[-1]
 
-    zspec = data['Pred']
-    zphot = data['Real']
+    zspec = data['Real']
+    zphot = data['Pred']
     residual = (zphot - zspec) / (1 + zspec)
 
     title = f"{mnemonic} | {_MAP_DATASET_NAMES[dataset]}"
@@ -189,14 +246,66 @@ def residual_plot_report(result_file, use_heatmap):
         save = f"{save}_{valset}"
 
     if use_heatmap:
-        heatmap_plot(zspec, residual, title, 'Z-Spec', '(Z-Phot - Z-Spec) / 1 + Z-Spec', save=save)
+        heatmap_plot(zspec, residual, title, 'Z-Spec', '(Z-Phot - Z-Spec) / 1 + Z-Spec', xlim=(0, 0.6), ylim=(-.2, .2), save=save)
     else:
         plot_jointd_sct_m(zspec, residual, title, 'Z-Spec', '(Z-Phot - Z-Spec) / (1 + Z-Spec)', xlim=(0, 0.6), ylim=(-.2, .2), s=15, save=save)
+
+
+def residual_plot_batch_report(dir, dataset_criteria, use_heatmap, exclusions):
+    preds_file_mask = f"{dir}/real_x_pred_*"
+    preds_files = glob.glob(preds_file_mask)
+    preds_data = np.array([])
+    fpreds_files = np.array([])
+
+    for f in preds_files:
+        file = f.split('/')[-1]
+        file_info = file.split("_")
+        mnemonic = file_info[3]
+        dataset = file_info[5]
+        if dataset == dataset_criteria and mnemonic not in exclusions:
+            fpreds_files = np.append(fpreds_files, f)
+
+    fpreds_files.sort()
+
+    for pf in fpreds_files:
+        file = pf.split('/')[-1]
+        print(f"######## {file} ########")
+        file_info = file.split("_")
+        mnemonic = file_info[3]
+        scaler = file_info[4]
+        dataset = file_info[5]
+        valset = None
+        if len(file_info) == 14:
+            valset = file_info[-1]
+
+        data = pd.read_csv(pf)
+        zspec = data['Real']
+        zphot = data['Pred']
+        residual = (zphot - zspec) / (1 + zspec)
+
+        title = f"{mnemonic} | {_MAP_DATASET_NAMES[dataset]}"
+
+        if valset:
+            title = f"{title}: {valset}"
+
+        pred_data = {'title': title, 'residual': residual, 'zspec': zspec}
+        preds_data = np.append(preds_data, pred_data)
+
+    save = f"residuals_{dataset_criteria}"
+    size = [6, 3]
+    if dataset_criteria == 'sdss':
+        size = [2, 3]
+    if use_heatmap:
+        heatmap_plot_batch(preds_data, size, xlim=(-0.5, 1.6), ylim=(-.4, .6), save=save)
+
 
 
 if __name__ == '__main__':
     parser = parser()
     args = parser.parse_args()
 
-    residual_plot_report(args.file, args.hm)
+    if(args.batch):
+        residual_plot_batch_report(args.dir, args.dataset, args.hm, args.ex)
+    else:
+        residual_plot_report(args.file, args.hm)
 

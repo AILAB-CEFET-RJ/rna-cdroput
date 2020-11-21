@@ -1,4 +1,7 @@
 import matplotlib.pyplot as plt
+from matplotlib import cm
+from matplotlib.colors import ListedColormap
+
 import numpy as np
 
 from matplotlib.ticker import NullFormatter
@@ -27,11 +30,20 @@ def heatmap_plot(x, y, title, x_label, y_label, xlim=None, ylim=None, save=None)
     else:
         extent = [xlim[0], xlim[1], ylim[0], ylim[1]]
 
-    im = plt.imshow(heatmap.T, extent=extent, origin='lower')
-    #im.set_cmap('nipy_spectral')
-    #im.set_cmap('flag')
-    im.set_cmap('gist_earth')
-    #im.set_cmap('terrain')
+    gist_earth = cm.get_cmap('gist_earth', 500)
+    gist_rainbow = cm.get_cmap('rainbow', 500)
+    newcolors = gist_earth(np.linspace(0, 1, 500))
+    rainbow = gist_rainbow(np.linspace(0, 1, 500))
+    white = np.array([1, 1, 1, 1])
+    #white = newcolors[-6:, :]
+    red = rainbow[-180:, :]
+    newcolors[:6, :] = white
+    newcolors[-180:, :] = red
+    cmap = ListedColormap(newcolors)
+
+    ax.tick_params(axis='both', which='major', labelsize=20)
+    plt.imshow(heatmap.T, extent=extent, origin='lower', cmap=cmap)
+
     ax.set_title(title, fontsize=24, color='blue')
     ax.set_xlabel(x_label, fontsize=22, color='blue')
     ax.set_ylabel(y_label, fontsize=22, color='blue')

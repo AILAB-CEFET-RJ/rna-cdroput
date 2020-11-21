@@ -337,8 +337,8 @@ def residual_plot_report(preds_file, files_dir, mnemonic, scaler, dataset, valse
         print(data.info())
         print(data.head())
 
-        zspec = data['Pred']
-        zphot = data['Real']
+        zspec = data['Real']
+        zphot = data['Pred']
         residual = (zphot - zspec) / (1 + zspec)
 
         title = f"{mnemonic} | {_MAP_DATASET_NAMES[dataset]}"
@@ -346,10 +346,8 @@ def residual_plot_report(preds_file, files_dir, mnemonic, scaler, dataset, valse
         if valset:
             title = f"{title}: {valset}"
             save = f"{save}_{valset}"
-        plot_jointd_sct_m(zspec, residual, title, 'Z-Spec', '(Z-Phot - Z-Spec) / (1 + Z-Spec)', xlim=(0, 0.6), ylim=(-.2, .2), s=15, save=save)
-        #plot_jointd_sct_m(residual, zspec, title, 'Residual (Z-Phot - Z-Spec)', 'Z-Spec', ylim=(-.2, 1), xlim=(-1, 1), s=15)
-
-        #heatmap_plot(zspec, residual, title, 'Z-Spec', '(Z-Phot - Z-Spec) / 1 + Z-Spec', save=save)
+        #plot_jointd_sct_m(zspec, residual, title, 'Z-Spec', '(Z-Phot - Z-Spec) / (1 + Z-Spec)', xlim=(0, 0.6), ylim=(-.2, .2), s=15, save=save)
+        heatmap_plot(zspec, residual, title, 'Z-Spec', '(Z-Phot - Z-Spec) / (1 + Z-Spec)', save=save)
 
 
 
@@ -392,10 +390,11 @@ def gen_table_report(dir):
                     }
                     tbl = tbl.append([data], ignore_index=True)
 
-    tbl = tbl[tbl.dataset == "COIN/Teddy"]
-    #tbl = tbl[tbl.valset == "D"]
+    tbl = tbl[tbl.dataset == "COIN/Happy"]
+    tbl = tbl[tbl.valset == "D"]
     tbl = tbl.sort_values(['valset', 'method', 'dataset'])
     tbl.drop(columns=['dataset', 'valset'], axis=1, inplace=True)
+    tbl.drop(columns=['mse', 'mae', 'rmse','r2'], axis=1, inplace=True)
     print(tbl.info())
     print('=================================================================')
     print(tbl.to_csv(index=False))
