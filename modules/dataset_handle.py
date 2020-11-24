@@ -108,6 +108,8 @@ def build_dataset(dataframe, num_features, scaler):
   else:
     if scaler != None:
       x_train = scaler.fit_transform(x_train)
+      x_val = scaler.transform(x_val)
+      x_test = scaler.transform(x_test)
 
   return x_train, y_train, x_test, y_test, x_val, y_val, scaler
 
@@ -153,6 +155,8 @@ def build_dataset_coin_data(df_train, df_val, num_features, scaler):
   else:
     if scaler != None:
       x_train = scaler.fit_transform(x_train)
+      x_val = scaler.transform(x_val)
+      x_test = scaler.transform(x_test)
 
   return x_train, y_train, x_test, y_test, x_val, y_val, scaler
 

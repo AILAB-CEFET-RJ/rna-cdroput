@@ -125,16 +125,16 @@ def gen_std_perc_report(files_dir):
         }
         infos = file.split('_')
 
-        data['method'] = infos[3]
-        data['scaler'] = infos[4]
-        data['dataset'] = infos[5]
+        data['method'] = infos[5]
+        data['scaler'] = infos[6]
+        data['dataset'] = infos[7]
 
-        if len(infos) == 14:
-            data['valset'] = infos[13]
+        if len(infos) == 16:
+            data['valset'] = infos[15]
         else:
             data['valset'] = '-'
 
-        pred_df = pd.read_csv(f"{files_dir}/{file}")
+        pred_df = pd.read_csv(f"{file}")
         b = [0, 1, 2, 3, 4]
         result = percent_distance_std(pred_df['Pred'], pred_df['Real'], b)
         print(result)
@@ -150,6 +150,11 @@ def gen_std_perc_report(files_dir):
         tbl = tbl.append([data], ignore_index=True)
 
         print(f"############################################################")
+
+    tbl = tbl[tbl.dataset == "teddy"]
+    tbl = tbl[tbl.valset == "D"]
+    tbl = tbl.sort_values(['valset', 'method', 'dataset'])
+    tbl.drop(columns=['dataset', 'valset', 'scaler'], axis=1, inplace=True)
 
     latex_std_perc_report(tbl)
 
@@ -394,7 +399,7 @@ def gen_table_report(dir):
     tbl = tbl[tbl.valset == "D"]
     tbl = tbl.sort_values(['valset', 'method', 'dataset'])
     tbl.drop(columns=['dataset', 'valset'], axis=1, inplace=True)
-    tbl.drop(columns=['mse', 'mae', 'rmse','r2'], axis=1, inplace=True)
+    #tbl.drop(columns=['mse', 'mae', 'rmse','r2'], axis=1, inplace=True)
     print(tbl.info())
     print('=================================================================')
     print(tbl.to_csv(index=False))

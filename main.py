@@ -202,6 +202,7 @@ if __name__ == '__main__':
             args.hl2 = neurons_1
 
         cfg = build_cfg(D, neurons_0, neurons_1, learning_rate, epochs, num_runs, args)
+        cfg.bias_output_layer = y_train.mean()
 
         print(f'input dim:{D}, feature dim: {f} for hl_0[{neurons_0}], hl_1[{neurons_1}]')
 

@@ -140,7 +140,7 @@ class ErrorBasedInvertedRandomDropout(tf.keras.layers.Layer):
         self.include_errors = include_errors
 
     def get_config(self):
-        return {"include_errors": self.include_errors}
+        return {'include_errors': self.include_errors}
 
     def call(self, inputs, training=None):
         NUM_BANDS = 5
