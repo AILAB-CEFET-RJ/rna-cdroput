@@ -43,6 +43,7 @@ def build_cfg(D, neurons_0, neurons_1, learning_rate, epochs, num_runs, args):
     cfg.args = args
     cfg.no_early_stopping = args.noes
     cfg.include_errors = args.ierr
+    cfg.batch_size = args.bs
 
     return cfg
 
@@ -64,6 +65,7 @@ def parser():
    parser.add_argument('-cut', action='store_true', help='Remove negative entries, cut 25 in u and 1.0 in all erros.')
    parser.add_argument('-hl1', metavar='HL1', type=int, default=0, help='Force amount of units in hidden layer 1.')
    parser.add_argument('-hl2', metavar='HL2', type=int, default=0, help='Force amount of units in hidden layer 2.')
+   parser.add_argument('-bs', metavar='BATCH', type=int, default=0, help='Batch size.')
    parser.add_argument('-coin_val', metavar='VALSET', help='Use a validation set from COIN data [B|C|D].')
    parser.add_argument('-mo', action='store_true', help='Reload all models trained stored previously. Skip train phase.')
    parser.add_argument('-ir', action='store_true', help='Apply Isotonic Regression.')

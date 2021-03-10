@@ -288,6 +288,12 @@ def callbacks(cfg, run):
 
 def do_training_runs(d, cfg, verbose, customized_dropout):
     print(f'Using device: {cfg.device_name}')
+
+    bs = 32
+    if cfg.batch_size:
+        bs = cfg.batch_size
+    print(f'Using batch size: {bs}')
+
     with tf.device(cfg.device_name):
         times = np.array([])
 
@@ -298,6 +304,7 @@ def do_training_runs(d, cfg, verbose, customized_dropout):
             hist = model.fit(d.x_train, d.y_train,
                             validation_data = (d.x_val, d.y_val),
                             epochs = cfg.epochs,
+                            batch_size = bs,
                             verbose = verbose,
                             callbacks = callbacks(cfg, i))
 
@@ -321,7 +328,6 @@ def neural_network(cfg, dropout=None):
     model.add(layers.Dense(cfg.l1_units, input_dim=cfg.D, kernel_initializer='normal', activation='relu'))
     model.add(layers.Dense(cfg.l2_units, kernel_initializer='normal', activation='relu'))
     model.add(layers.Dense(1, bias_initializer=initializers.Constant(cfg.bias_output_layer)))
-    #model.add(layers.Dense(1))
 
     adam = tf.keras.optimizers.Adam(lr=cfg.learning_rate)
     model.compile(loss='mse',
