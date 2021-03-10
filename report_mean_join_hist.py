@@ -124,45 +124,61 @@ def plot_jointd_sct_m(xdf, ydf, title, xlabel, ylabel, xlim=None, ylim=None, s=0
     plt.show()
 
 
-def mean_hist_plot_batch(data, size, xlim=None, ylim=None, xlabel='', ylabel='', save=None):
-    bins = 500
+def mean_hist_join_plot_batch(data, size, xlim=None, ylim=None, xlabel='', ylabel='', save=None):
+    fig, axs = plt.subplots(size[0], size[1], figsize=(8, 5 * size[0]))
 
-    f = mticker.ScalarFormatter(useOffset=False, useMathText=True)
-    g = lambda x, pos: "${}$".format(f._formatSciNotation('%1.2e' % x))
-    fmt = mticker.FuncFormatter(g)
-
-    fig, axs = plt.subplots(size[0], size[1], figsize=(16, 5 * size[0]))
-
-    k = 0
     i = 0
+    sb =['s', '^', 'd', 'o']
     for d in data:
-        x = d['means']
-        m = d['m']
-        axs[k][i].hist(x, bins, log=True)
-        axs[k][i].axvline(x=m, color='red', linestyle='--', label="{}".format(fmt(m)))
-        axs[k][i].legend(loc=(0.58, 0.8))
-        axs[k][i].tick_params(axis='x', which='both', labelbottom=False)
-        axs[k][i].tick_params(axis='y', which='both', labelleft=False)
+        x = d['zphot - zspec']
+        y = d['zspec']
+        std = d['std']
 
-        if i == 0:
-            #axs[k][i].set_ylabel('(z-phot - z-spec) / (1 + z-spec)', fontsize=16, color='blue')
-            #axs[k][i].set_ylabel('MAD', fontsize=16, color='blue')
-            #axs[k][i].set_ylabel('z-phot', fontsize=16, color='blue')
-            axs[k][i].set_ylabel(ylabel, fontsize=16)
-            axs[k][i].tick_params(axis='y', which='both', labelleft=True, labelsize=14)
+        if size[0] == 1:
+            axs.set_ylabel(ylabel, fontsize=16)
+            axs.tick_params(axis='y', which='both', labelleft=True, labelsize=14)
+            axs.set_xlabel(xlabel, fontsize=16)
+            axs.tick_params(axis='x', which='both', labelbottom=True, labelsize=14)
 
-        if k ==  size[0] -1:
-            axs[k][i].set_xlabel(xlabel, fontsize=16)
-            axs[k][i].tick_params(axis='x', which='both', labelbottom=True, labelsize=14)
+            axs.plot(x, y, f"-{sb[i]}", label=d['title'])
+            #axs.plot([x,-std,std], [y,y,y], f"-{sb[i]}", label=d['title'])
+            i = i + 1
 
-        axs[k][i].set_title(d['title'], fontsize=18)
-        axs[k][i].set_xlim(xlim)
-        axs[k][i].set_ylim(ylim)
+        else:
+            if d['valset'] == 'B':
+                axs[0].set_ylabel(ylabel, fontsize=16)
+                axs[0].tick_params(axis='y', which='both', labelleft=True, labelsize=14)
+                axs[0].set_xlabel(xlabel, fontsize=16)
+                axs[0].tick_params(axis='x', which='both', labelbottom=True, labelsize=14)
 
-        i=i+1
-        if i == size[1]:
-            i=0
-            k=k+1
+                axs[0].plot(x, y, f"-{sb[i]}", label=d['title'])
+                #axs[0].plot([x, -std, std], [y,y,y], f"-{sb[i]}", label=d['title'])
+
+            if d['valset'] == 'C':
+                axs[1].set_ylabel(ylabel, fontsize=16)
+                axs[1].tick_params(axis='y', which='both', labelleft=True, labelsize=14)
+                axs[1].set_xlabel(xlabel, fontsize=16)
+                axs[1].tick_params(axis='x', which='both', labelbottom=True, labelsize=14)
+
+                axs[1].plot(x, y, f"-{sb[i]}", label=d['title'])
+                #axs[1].plot([x, -std, std], [y,y,y], f"-{sb[i]}", label=d['title'])
+
+            if d['valset'] == 'D':
+                axs[2].set_ylabel(ylabel, fontsize=16)
+                axs[2].tick_params(axis='y', which='both', labelleft=True, labelsize=14)
+                axs[2].set_xlabel(xlabel, fontsize=16)
+                axs[2].tick_params(axis='x', which='both', labelbottom=True, labelsize=14)
+
+                axs[2].plot(x, y, f"-{sb[i]}", label=d['title'])
+                #axs[2].plot([x, -std, std], [y,y,y], f"-{sb[i]}", label=d['title'])
+                i = i + 1
+
+    if size[0] == 1:
+        plt.legend()
+    else:
+        axs[0].legend()
+        axs[1].legend()
+        axs[2].legend()
 
     if save:
         plt.savefig(save)
@@ -249,9 +265,10 @@ def residual_plot_report(result_file, use_heatmap):
         plot_jointd_sct_m(zspec, residual, title, 'Z-Spec', '(Z-Phot - Z-Spec) / (1 + Z-Spec)', xlim=(0, 0.6), ylim=(-.2, .2), s=15, save=save)
 
 
-def mean_hist_plot_batch_report(dir, dataset_criteria, use_heatmap, exclusions):
+def mean_hist_plot_batch_report(dir, dataset_criteria, exclusions):
     preds_file_mask = f"{dir}/real_x_pred_*"
     preds_files = glob.glob(preds_file_mask)
+    #preds_data = pd.DataFrame(columns=['title', 'zspec', 'zphot - zspec', 'std', 'valset'])
     preds_data = np.array([])
     fpreds_files = np.array([])
 
@@ -279,31 +296,31 @@ def mean_hist_plot_batch_report(dir, dataset_criteria, use_heatmap, exclusions):
         data = pd.read_csv(pf)
         zspec = data['Real']
         zphot = data['Pred']
-        means = zphot - zspec
-        m = means.mean()
+        diff = zphot - zspec
+        m = diff.mean()
+        std = diff.std()
 
         title = f"{mnemonic} | {_MAP_DATASET_NAMES[dataset]}"
 
         if valset:
             title = f"{title}: {valset}"
 
-        pred_data = {'title': title, 'means': means, 'm': m}
-        preds_data = np.append(preds_data, pred_data)
+        p_data = {'title': title, 'zspec' : data['Real'].mean(), 'zphot - zspec': m, 'std': std, 'valset': valset}
+        preds_data = np.append(preds_data, p_data)
+        #preds_data = preds_data.append(p_data, ignore_index=True)
 
-    save = f"means_hist_{dataset_criteria}"
-    #save = f"1x1_{dataset_criteria}"
-    size = [4, 3]
-    #size = [3, 6]
+
+    save = f"means_hist_join_{dataset_criteria}"
+    size = [3, 1]
     if dataset_criteria == 'sdss':
-        size = [2, 2]
-        #size = [2, 3]
+        size = [1, 1]
 
-    mean_hist_plot_batch(
+    mean_hist_join_plot_batch(
         preds_data, size,
         xlim=(-1.2, 1.2), ylim=(0, 5000),
         save=save,
         xlabel='zphot - zspec',
-        ylabel='N'
+        ylabel='zspec'
     )
 
 
@@ -313,7 +330,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if(args.batch):
-        mean_hist_plot_batch_report(args.dir, args.dataset, args.hm, args.ex)
+        mean_hist_plot_batch_report(args.dir, args.dataset, args.ex)
     else:
         residual_plot_report(args.file, args.hm)
 

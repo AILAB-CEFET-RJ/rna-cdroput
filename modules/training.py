@@ -320,7 +320,8 @@ def neural_network(cfg, dropout=None):
 
     model.add(layers.Dense(cfg.l1_units, input_dim=cfg.D, kernel_initializer='normal', activation='relu'))
     model.add(layers.Dense(cfg.l2_units, kernel_initializer='normal', activation='relu'))
-    model.add(layers.Dense(1))
+    model.add(layers.Dense(1, bias_initializer=initializers.Constant(cfg.bias_output_layer)))
+    #model.add(layers.Dense(1))
 
     adam = tf.keras.optimizers.Adam(lr=cfg.learning_rate)
     model.compile(loss='mse',

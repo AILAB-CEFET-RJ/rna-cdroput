@@ -1,5 +1,6 @@
 import random
 import tensorflow as tf
+import numpy as np
 from tensorflow.keras.layers import Layer
 
 from sklearn.preprocessing import StandardScaler
@@ -15,7 +16,7 @@ def select_dropout(dropout_opt, include_errors):
     if dropout_opt == 'ErrorBasedDropoutDT':
         return ErrorBasedDropoutDT(include_errors)
     if dropout_opt == 'ErrorBasedInvertedDropout':
-        return ErrorBasedInvertedDropout(include_errors)
+        return ErrorBasedInvertedDropout()#include_errors)
     if dropout_opt == 'ErrorBasedInvertedRandomDropout':
         return ErrorBasedInvertedRandomDropout(include_errors)
 
@@ -83,10 +84,15 @@ class ErrorBasedDropoutDT(ErrorBasedDropoutIR):
 
 
 class ErrorBasedInvertedDropout(tf.keras.layers.Layer):
-    def __init__(self, include_errors, **kwargs):
+    def __init__(self, **kwargs):
         super(ErrorBasedInvertedDropout, self).__init__(**kwargs)
         print('ErrorBasedInvertedDropout')
-        self.include_errors = include_errors
+        self.include_errors = False
+
+    #def __init__(self, include_errors, **kwargs):
+    #    super(ErrorBasedInvertedDropout, self).__init__(**kwargs)
+    #    print('ErrorBasedInvertedDropout')
+    #    self.include_errors = include_errors
 
     def get_config(self):
         return {"include_errors": self.include_errors}
@@ -163,6 +169,9 @@ class ErrorBasedInvertedRandomDropout(tf.keras.layers.Layer):
             keep_probs = tf.math.subtract(ones, sfmax[0])
             rnd_unif = tf.random.uniform(shape=(1, SBANDS), dtype=tf.dtypes.float32)
             mask = tf.math.greater(keep_probs, rnd_unif)
+            # contar os 1s ou 0s do mask
+            # disc pra ugriz: acumula 0s em cada banda
+
             casted_mask = tf.cast(mask, dtype=tf.dtypes.float32)
             masked_input = tf.math.multiply(ugriz, casted_mask)
             keep_probs_mean = tf.math.reduce_mean(keep_probs)
@@ -178,8 +187,12 @@ class ErrorBasedInvertedRandomDropout(tf.keras.layers.Layer):
                 print('Using Custom Dropout')
                 if self.include_errors:
                     output = droppedout_ugriz(ugriz_n_errors, errs)
+                    if output != ugriz:
+                        print('#dropout_used')
                 else:
                     output = droppedout_ugriz(ugriz, errs)
+                    nonzero = tf.math.count_nonzero(output - ugriz)
+                    tf.keras.backend.print_tensor(nonzero)
 
             else:
                 print('Dropout off')

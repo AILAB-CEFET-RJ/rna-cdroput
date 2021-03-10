@@ -125,7 +125,7 @@ def plot_jointd_sct_m(xdf, ydf, title, xlabel, ylabel, xlim=None, ylim=None, s=0
     plt.show()
 
 
-def heatmap_plot_batch(data, size, xlim=None, ylim=None, save=None):
+def heatmap_plot_batch(data, size, xlim=None, ylim=None, ylabel='MAD', save=None):
     gist_earth = cm.get_cmap('gist_earth', 500)
     gist_rainbow = cm.get_cmap('rainbow', 500)
     newcolors = gist_earth(np.linspace(0, 1, 500))
@@ -152,7 +152,8 @@ def heatmap_plot_batch(data, size, xlim=None, ylim=None, save=None):
         if i == 0:
             #axs[k][i].set_ylabel('(z-phot - z-spec) / (1 + z-spec)', fontsize=16, color='blue')
             #axs[k][i].set_ylabel('MAD', fontsize=16, color='blue')
-            axs[k][i].set_ylabel('z-phot', fontsize=16, color='blue')
+            #axs[k][i].set_ylabel('z-phot', fontsize=16, color='blue')
+            axs[k][i].set_ylabel(ylabel, fontsize=16, color='blue')
             axs[k][i].tick_params(axis='y', which='both', labelleft=True, labelsize=14)
 
         if k ==  size[0] -1:
@@ -284,7 +285,7 @@ def residual_plot_batch_report(dir, dataset_criteria, use_heatmap, exclusions):
         zspec = data['Real']
         zphot = data['Pred']
         residual = (zphot - zspec) / (1 + zspec)
-        residual = zphot
+        #residual = zphot
 
         title = f"{mnemonic} | {_MAP_DATASET_NAMES[dataset]}"
 
@@ -295,14 +296,17 @@ def residual_plot_batch_report(dir, dataset_criteria, use_heatmap, exclusions):
         preds_data = np.append(preds_data, pred_data)
 
     save = f"residuals_{dataset_criteria}"
-    size = [6, 3]
+    #save = f"1x1_{dataset_criteria}"
+    #size = [6, 3]
+    size = [3, 6]
     if dataset_criteria == 'sdss':
         size = [2, 3]
     if use_heatmap:
         #teddy xlim=(-0.5, 1.6), ylim=(-.4, .6)
         #happy xlim=(-0.5, 1.6), ylim=(-.4, 1.2)
         #sdss xlim=(-0.5, 1.6), ylim=(-.4, 1.2)
-        heatmap_plot_batch(preds_data, size, xlim=(-0.5, 1.6), ylim=(-.4, 1.2), save=save)
+        #heatmap_plot_batch(preds_data, size, xlim=(0, 1.6), ylim=(0, 1.1), save=save, ylabel='z-phot')
+        heatmap_plot_batch(preds_data, size, xlim=(0, 1), ylim=(-.6, .6), save=save, ylabel='MAD')
 
 
 
