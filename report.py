@@ -232,7 +232,7 @@ def gen_img_hist_report(files_dir, mnemonic, scaler, dataset, metric, epochs, ru
     if len(model_files) > 0:
         best_model_file = get_best_model_file(model_files)
         idx = best_model_file.split('run_')[1].split('_')[0]
-        if run:
+        if run != None:
             idx = run
         best_hist_file_mask = f"{files_dir}/hist_{mnemonic}_{scaler}_{dataset}*_run_{idx}"
         if epochs:
