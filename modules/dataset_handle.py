@@ -99,9 +99,14 @@ def build_dataset(dataframe, num_features, scaler):
       x_val_ugriz = scaler.transform(x_val_ugriz)
       x_test_ugriz = scaler.transform(x_test_ugriz)
 
-      x_train = np.hstack((x_train_ugriz, x_train_errs, x_train_experrs))
-      x_val = np.hstack((x_val_ugriz, x_val_errs, x_val_experrs))
-      x_test = np.hstack((x_test_ugriz, x_test_errs, x_test_experrs))
+      if chunks == 2:
+        x_train = np.hstack((x_train_ugriz, x_train_errs))
+        x_val = np.hstack((x_val_ugriz, x_val_errs))
+        x_test = np.hstack((x_test_ugriz, x_test_errs))
+      else:
+        x_train = np.hstack((x_train_ugriz, x_train_errs, x_train_experrs))
+        x_val = np.hstack((x_val_ugriz, x_val_errs, x_val_experrs))
+        x_test = np.hstack((x_test_ugriz, x_test_errs, x_test_experrs))
 
   elif num_features > 15:
     x_train_ugriz, x_train_errs, x_train_experrs, x_train_expmags = ugriz_errs_split(x_train, chunks)
@@ -155,9 +160,14 @@ def build_dataset_coin_data(df_train, df_val, num_features, scaler):
       x_val_ugriz = scaler.transform(x_val_ugriz)
       x_test_ugriz = scaler.transform(x_test_ugriz)
 
-      x_train = np.hstack((x_train_ugriz, x_train_errs, x_train_experrs))
-      x_val = np.hstack((x_val_ugriz, x_val_errs, x_val_experrs))
-      x_test = np.hstack((x_test_ugriz, x_test_errs))
+      if chunks == 2:
+        x_train = np.hstack((x_train_ugriz, x_train_errs))
+        x_val = np.hstack((x_val_ugriz, x_val_errs))
+        x_test = np.hstack((x_test_ugriz))
+      else:
+        x_train = np.hstack((x_train_ugriz, x_train_errs, x_train_experrs))
+        x_val = np.hstack((x_val_ugriz, x_val_errs, x_val_experrs))
+        x_test = np.hstack((x_test_ugriz, x_test_errs))
 
   elif num_features > 15:
     x_train_ugriz, x_train_errs, x_train_experrs, x_train_expmags = ugriz_errs_split(x_train, chunks)
