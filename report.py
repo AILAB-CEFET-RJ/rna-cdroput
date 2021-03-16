@@ -55,6 +55,7 @@ def parser():
    parser.add_argument('-gen_trace_table', action='store_true', help='Generate trace metrics table from out files.')
    parser.add_argument('-dzm_bias', action='store_true', help='Generate delta z mean for bias.')
    parser.add_argument('-residual_plot', action='store_true', help='Generate residual plot.')
+   parser.add_argument('-save', metavar='FILE', help='Save the image in a file.')
 
    return parser
 
@@ -220,7 +221,7 @@ def get_best_model_file(model_files):
     return model_map[best]
 
 
-def gen_img_hist_report(files_dir, mnemonic, scaler, dataset, metric, epochs, run):
+def gen_img_hist_report(files_dir, mnemonic, scaler, dataset, metric, epochs, run, save=None):
     model_file_mask = f"{files_dir}/model_{mnemonic}_{dataset}_{scaler}*"
     if epochs:
         model_file_mask = f"{files_dir}/model_{mnemonic}_{dataset}_{scaler}_epochs_{epochs}*"
@@ -258,6 +259,10 @@ def gen_img_hist_report(files_dir, mnemonic, scaler, dataset, metric, epochs, ru
     ax.legend(["train_loss", "val_loss"])
     ax.set_xlabel('Épocas')
     ax.set_ylabel('Erros')
+
+    if save:
+        plt.savefig(save)
+
     plt.show()
 
 
@@ -525,12 +530,13 @@ if __name__ == '__main__':
     epochs = args.e
     run = args.run
     pred_file = args.pf
+    save = args.save
 
     if std_perc_report:
         gen_std_perc_report(files_dir)
 
     if img_hist_report:
-        gen_img_hist_report(files_dir, mnemonic, scaler, dataset, metric, epochs, run)
+        gen_img_hist_report(files_dir, mnemonic, scaler, dataset, metric, epochs, run, save=save)
 
     if heatmap:
         gen_heatmap_report(pred_file, files_dir, mnemonic, scaler, dataset, valset)
