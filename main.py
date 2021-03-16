@@ -71,7 +71,7 @@ def parser():
    parser.add_argument('-ir', action='store_true', help='Apply Isotonic Regression.')
    parser.add_argument('-dt', action='store_true', help='Apply Decision Tree.')
    parser.add_argument('-ierr', action='store_true', help='Include errors as features on custom ANNs.')
-   parser.add_argument('-dz', action='store_true', default=False, help='Include errors as features on custom ANNs.')
+   parser.add_argument('-dz', action='store_true', default=False, help='Do regression for bands on custom ANNs.')
 
 
 

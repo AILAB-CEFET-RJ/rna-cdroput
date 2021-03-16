@@ -244,15 +244,18 @@ class EBasedInvDynamicDp(tf.keras.layers.Layer):
             rnd_unif = tf.random.uniform(shape=(1, SBANDS), dtype=tf.dtypes.float32)
             mask = tf.math.greater(keep_probs, rnd_unif)
             casted_mask = tf.cast(mask, dtype=tf.dtypes.float32)
-            masked_input_err = tf.math.multiply(ugriz, casted_mask)
+            if self.include_errors:
+                masked_input_err = tf.math.multiply(ugriz_n_errors, casted_mask)
+            else:
+                masked_input_err = tf.math.multiply(ugriz, casted_mask)
 
             # -- mascarando os ugriz ---
             zeros = tf.zeros(shape=(1, SBANDS), dtype=tf.dtypes.float32)
             casted_mask_mag = tf.where(casted_mask == 1.0, zeros , ones)
-            if SBANDS == 5:
-                masked_input_mag = tf.math.multiply(exp_ugriz, casted_mask_mag)
-            else:
+            if self.include_errors:
                 masked_input_mag = tf.math.multiply(exp_ugriz_n_errors, casted_mask_mag)
+            else:
+                masked_input_mag = tf.math.multiply(exp_ugriz, casted_mask_mag)
 
 
             # -- juntando ---
