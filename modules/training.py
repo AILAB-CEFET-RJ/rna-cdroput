@@ -72,7 +72,13 @@ def model_name_nmnic(cfg):
         modelname=f"{modelname}AD-Inv"
     if cfg.args.blm:
         modelname = cfg.args.blm.upper()
-    if not cfg.args.dp:
+    if cfg.args.dp:
+        cf = 5
+        if cfg.args.ierr:
+            cf = 10
+
+        modelname = f"{modelname}{cf:02d}"
+    else:
         modelname = f"{modelname}{cfg.args.f:02d}"
 
     return modelname
