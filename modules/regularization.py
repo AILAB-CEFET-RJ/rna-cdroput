@@ -111,7 +111,7 @@ class ErrorBasedInvertedDropout(tf.keras.layers.Layer):
         if self.include_errors:
             SBANDS = 10
 
-        def droppedout_ugriz(ugriz, errs):
+        def droppedout_ugriz(ugriz, errs, expErrs):
             ones = tf.ones(shape=(1, SBANDS), dtype=tf.dtypes.float32)
             sfmax = tf.nn.softmax(tf.math.divide(tf.math.subtract(errs, expErrs), errs))
             if self.include_errors:
@@ -130,9 +130,9 @@ class ErrorBasedInvertedDropout(tf.keras.layers.Layer):
 
         if training:
             if self.include_errors:
-                output = droppedout_ugriz(ugriz_n_errors, errs)
+                output = droppedout_ugriz(ugriz_n_errors, errs, expErrs)
             else:
-                output = droppedout_ugriz(ugriz, errs)
+                output = droppedout_ugriz(ugriz, errs, expErrs)
         else:
             output = ugriz
             if self.include_errors:
@@ -224,9 +224,10 @@ class EBasedInvDynamicDp(tf.keras.layers.Layer):
         NUM_BANDS_N_ERRORS = 10
         ugriz = inputs[:, :NUM_BANDS]
         errs = inputs[:, NUM_BANDS:2 * NUM_BANDS]
-        exp_ugriz = inputs[:, NUM_BANDS:3 * NUM_BANDS]
-        exp_errs = inputs[:, 2 * NUM_BANDS:]
+        exp_ugriz = inputs[:, 3 * NUM_BANDS:]
+        exp_errs = inputs[:, 2*NUM_BANDS:3 * NUM_BANDS]
         ugriz_n_errors = inputs[:, :NUM_BANDS_N_ERRORS]
+        exp_ugriz_n_errors = tf.concat([exp_ugriz, exp_errs], axis=1)
 
         SBANDS = 5
         if self.include_errors:
@@ -248,7 +249,11 @@ class EBasedInvDynamicDp(tf.keras.layers.Layer):
             # -- mascarando os ugriz ---
             zeros = tf.zeros(shape=(1, SBANDS), dtype=tf.dtypes.float32)
             casted_mask_mag = tf.where(casted_mask == 1.0, zeros , ones)
-            masked_input_mag = tf.math.multiply(exp_ugriz, casted_mask_mag)
+            if SBANDS == 5:
+                masked_input_mag = tf.math.multiply(exp_ugriz, casted_mask_mag)
+            else:
+                masked_input_mag = tf.math.multiply(exp_ugriz_n_errors, casted_mask_mag)
+
 
             # -- juntando ---
             masked_input = tf.math.add(masked_input_err, masked_input_mag)
