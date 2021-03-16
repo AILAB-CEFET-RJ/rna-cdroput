@@ -39,9 +39,11 @@ def remove_col_df(dataframe, col_to_remove):
 def ugriz_errs_split(x, chunks=2):
   x_splited = np.hsplit(x, chunks)
   if chunks == 2:
-    return x_splited[0], x_splited[1], [[]]
+    return x_splited[0], x_splited[1], [[]], [[]]
+  elif chunks == 3:
+    return x_splited[0], x_splited[1], x_splited[2], [[]]
   else:
-    return x_splited[0], x_splited[1], x_splited[2]
+    return x_splited[0], x_splited[1], x_splited[2], x_splited[3]
 
 
 def filter_col(dataframe):
@@ -85,26 +87,36 @@ def build_dataset(dataframe, num_features, scaler):
 
   chunks = 2
   if num_features > 10:
-    chunks = 3
+    chunks = num_features / 5
 
-  if num_features > 5:
-    x_train_ugriz, x_train_errs, x_train_experrs = ugriz_errs_split(x_train, chunks)
-    x_val_ugriz, x_val_errs, x_val_experrs = ugriz_errs_split(x_val, chunks)
-    x_test_ugriz, x_test_errs, x_test_experrs = ugriz_errs_split(x_test, chunks)
+  if 5 < num_features < 16:
+    x_train_ugriz, x_train_errs, x_train_experrs, _ = ugriz_errs_split(x_train, chunks)
+    x_val_ugriz, x_val_errs, x_val_experrs, _ = ugriz_errs_split(x_val, chunks)
+    x_test_ugriz, x_test_errs, x_test_experrs, _ = ugriz_errs_split(x_test, chunks)
 
     if scaler != None:
       x_train_ugriz = scaler.fit_transform(x_train_ugriz)
       x_val_ugriz = scaler.transform(x_val_ugriz)
       x_test_ugriz = scaler.transform(x_test_ugriz)
 
-    if chunks == 2:
-        x_train = np.hstack((x_train_ugriz, x_train_errs))
-        x_val = np.hstack((x_val_ugriz, x_val_errs))
-        x_test = np.hstack((x_test_ugriz, x_test_errs))
-    else:
-        x_train = np.hstack((x_train_ugriz, x_train_errs, x_train_experrs))
-        x_val = np.hstack((x_val_ugriz, x_val_errs, x_val_experrs))
-        x_test = np.hstack((x_test_ugriz, x_test_errs, x_test_experrs))
+      x_train = np.hstack((x_train_ugriz, x_train_errs, x_train_experrs))
+      x_val = np.hstack((x_val_ugriz, x_val_errs, x_val_experrs))
+      x_test = np.hstack((x_test_ugriz, x_test_errs, x_test_experrs))
+
+  elif num_features > 15:
+    x_train_ugriz, x_train_errs, x_train_experrs, x_train_expmags = ugriz_errs_split(x_train, chunks)
+    x_val_ugriz, x_val_errs, x_val_experrs, x_val_expmags = ugriz_errs_split(x_val, chunks)
+    x_test_ugriz, x_test_errs, x_test_experrs, x_test_expmags = ugriz_errs_split(x_test, chunks)
+
+    if scaler != None:
+      x_train_ugriz = scaler.fit_transform(x_train_ugriz)
+      x_val_ugriz = scaler.transform(x_val_ugriz)
+      x_test_ugriz = scaler.transform(x_test_ugriz)
+
+      x_train = np.hstack((x_train_ugriz, x_train_errs, x_train_experrs, x_train_expmags))
+      x_val = np.hstack((x_val_ugriz, x_val_errs, x_val_experrs, x_val_expmags))
+      x_test = np.hstack((x_test_ugriz, x_test_errs, x_test_experrs, x_test_expmags))
+
   else:
     if scaler != None:
       x_train = scaler.fit_transform(x_train)
@@ -131,26 +143,35 @@ def build_dataset_coin_data(df_train, df_val, num_features, scaler):
 
   chunks = 2
   if num_features > 10:
-    chunks = 3
+    chunks = num_features / 5
 
-  if num_features > 5:
-    x_train_ugriz, x_train_errs, x_train_experrs = ugriz_errs_split(x_train, chunks)
-    x_val_ugriz, x_val_errs, x_val_experrs = ugriz_errs_split(x_val, chunks)
-    x_test_ugriz, x_test_errs, _ = ugriz_errs_split(x_test, 2)
+  if 5 < num_features < 16:
+    x_train_ugriz, x_train_errs, x_train_experrs, _ = ugriz_errs_split(x_train, chunks)
+    x_val_ugriz, x_val_errs, x_val_experrs, _ = ugriz_errs_split(x_val, chunks)
+    x_test_ugriz, x_test_errs, _, _ = ugriz_errs_split(x_test, 2)
 
     if scaler != None:
       x_train_ugriz = scaler.fit_transform(x_train_ugriz)
       x_val_ugriz = scaler.transform(x_val_ugriz)
       x_test_ugriz = scaler.transform(x_test_ugriz)
 
-    if chunks == 2:
-        x_train = np.hstack((x_train_ugriz, x_train_errs))
-        x_val = np.hstack((x_val_ugriz, x_val_errs))
-    else:
-        x_train = np.hstack((x_train_ugriz, x_train_errs, x_train_experrs))
-        x_val = np.hstack((x_val_ugriz, x_val_errs, x_val_experrs))
+      x_train = np.hstack((x_train_ugriz, x_train_errs))
+      x_val = np.hstack((x_val_ugriz, x_val_errs))
+      x_test = np.hstack((x_test_ugriz, x_test_errs))
 
-    x_test = np.hstack((x_test_ugriz, x_test_errs))
+  elif num_features > 15:
+    x_train_ugriz, x_train_errs, x_train_experrs, x_train_expmags = ugriz_errs_split(x_train, chunks)
+    x_val_ugriz, x_val_errs, x_val_experrs, x_val_expmags = ugriz_errs_split(x_val, chunks)
+    x_test_ugriz, x_test_errs, x_test_experrs, x_test_expmags = ugriz_errs_split(x_test, chunks)
+
+    if scaler != None:
+      x_train_ugriz = scaler.fit_transform(x_train_ugriz)
+      x_val_ugriz = scaler.transform(x_val_ugriz)
+      x_test_ugriz = scaler.transform(x_test_ugriz)
+
+      x_train = np.hstack((x_train_ugriz, x_train_errs, x_train_experrs, x_train_expmags))
+      x_val = np.hstack((x_val_ugriz, x_val_errs, x_val_experrs, x_val_expmags))
+      x_test = np.hstack((x_test_ugriz, x_test_errs, x_test_experrs, x_test_expmags))
 
   else:
     if scaler != None:
@@ -183,14 +204,12 @@ def load_dataframe(dataset_name, coin_val):
 def download_data(dataset_name, coin_val):
   if dataset_name == 'teddy':
     if coin_val:
-      download_teddy()
       download_teddy(data_chunk=coin_val)
     else:
       download_teddy()
 
   if dataset_name == 'happy':
     if coin_val:
-      download_happy()
       download_happy(data_chunk=coin_val)
     else:
       download_happy()

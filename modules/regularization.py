@@ -16,9 +16,11 @@ def select_dropout(dropout_opt, include_errors):
     if dropout_opt == 'ErrorBasedDropoutDT':
         return ErrorBasedDropoutDT(include_errors)
     if dropout_opt == 'ErrorBasedInvertedDropout':
-        return ErrorBasedInvertedDropout()#include_errors)
+        return ErrorBasedInvertedDropout(include_errors)
     if dropout_opt == 'ErrorBasedInvertedRandomDropout':
         return ErrorBasedInvertedRandomDropout(include_errors)
+    if dropout_opt == 'EBasedInvDynamicDp':
+        return EBasedInvDynamicDp(include_errors)
 
 
 def select_scaler(scaler_opt):
@@ -84,15 +86,15 @@ class ErrorBasedDropoutDT(ErrorBasedDropoutIR):
 
 
 class ErrorBasedInvertedDropout(tf.keras.layers.Layer):
-    def __init__(self, **kwargs):
-        super(ErrorBasedInvertedDropout, self).__init__(**kwargs)
-        print('ErrorBasedInvertedDropout')
-        self.include_errors = False
-
-    #def __init__(self, include_errors, **kwargs):
+    #def __init__(self, **kwargs):
     #    super(ErrorBasedInvertedDropout, self).__init__(**kwargs)
     #    print('ErrorBasedInvertedDropout')
-    #    self.include_errors = include_errors
+    #    self.include_errors = False
+
+    def __init__(self, include_errors, **kwargs):
+        super(ErrorBasedInvertedDropout, self).__init__(**kwargs)
+        print('ErrorBasedInvertedDropout')
+        self.include_errors = include_errors
 
     def get_config(self):
         return {"include_errors": self.include_errors}
@@ -199,6 +201,65 @@ class ErrorBasedInvertedRandomDropout(tf.keras.layers.Layer):
                 output = ugriz
                 if self.include_errors:
                     output = ugriz_n_errors
+
+        else:
+            output = ugriz
+            if self.include_errors:
+                output = ugriz_n_errors
+
+        return output
+
+
+class EBasedInvDynamicDp(tf.keras.layers.Layer):
+    def __init__(self, include_errors, **kwargs):
+        super(EBasedInvDynamicDp, self).__init__(**kwargs)
+        print('EBasedInvRandDynamicDp')
+        self.include_errors = include_errors
+
+    def get_config(self):
+        return {'include_errors': self.include_errors}
+
+    def call(self, inputs, training=None):
+        NUM_BANDS = 5
+        NUM_BANDS_N_ERRORS = 10
+        ugriz = inputs[:, :NUM_BANDS]
+        errs = inputs[:, NUM_BANDS:2 * NUM_BANDS]
+        exp_ugriz = inputs[:, NUM_BANDS:3 * NUM_BANDS]
+        exp_errs = inputs[:, 2 * NUM_BANDS:]
+        ugriz_n_errors = inputs[:, :NUM_BANDS_N_ERRORS]
+
+        SBANDS = 5
+        if self.include_errors:
+            SBANDS = 10
+
+        def droppedout_ugriz(ugriz, errs):
+            ones = tf.ones(shape=(1, SBANDS), dtype=tf.dtypes.float32)
+            sfmax = tf.nn.softmax(tf.math.divide(tf.math.subtract(errs, exp_errs), errs))
+            if self.include_errors:
+                sfmax = tf.concat([sfmax, sfmax], axis=1)
+
+            # -- mascarando os erros ---
+            keep_probs = tf.math.subtract(ones, sfmax[0])
+            rnd_unif = tf.random.uniform(shape=(1, SBANDS), dtype=tf.dtypes.float32)
+            mask = tf.math.greater(keep_probs, rnd_unif)
+            casted_mask = tf.cast(mask, dtype=tf.dtypes.float32)
+            masked_input_err = tf.math.multiply(ugriz, casted_mask)
+
+            # -- mascarando os ugriz ---
+            zeros = tf.zeros(shape=(1, SBANDS), dtype=tf.dtypes.float32)
+            casted_mask_mag = tf.where(casted_mask == 1.0, zeros , ones)
+            masked_input_mag = tf.math.multiply(exp_ugriz, casted_mask_mag)
+
+            # -- juntando ---
+            masked_input = tf.math.add(masked_input_err, masked_input_mag)
+
+            return masked_input
+
+        if training:
+            if self.include_errors:
+                output = droppedout_ugriz(ugriz_n_errors, errs)
+            else:
+                output = droppedout_ugriz(ugriz, errs)
 
         else:
             output = ugriz

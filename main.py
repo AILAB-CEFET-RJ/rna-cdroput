@@ -71,6 +71,8 @@ def parser():
    parser.add_argument('-ir', action='store_true', help='Apply Isotonic Regression.')
    parser.add_argument('-dt', action='store_true', help='Apply Decision Tree.')
    parser.add_argument('-ierr', action='store_true', help='Include errors as features on custom ANNs.')
+   parser.add_argument('-dz', action='store_true', default=False, help='Include errors as features on custom ANNs.')
+
 
 
    return parser
@@ -94,7 +96,7 @@ def apply_transforms(dataframe, dropout_opt, subsample, dataset_name, rmne, cuts
         print(f"Using full sample {df.shape[0]}.")
 
     if dropout_opt == 'ErrorBasedDropoutIR' or args.ir:
-        df = t.apply_isotonic_regression(df, dataset_name)
+        df = t.apply_isotonic_regression(df, dataset_name, args.dz)
     if dropout_opt == 'ErrorBasedDropoutDT' or args.dt:
         df = t.apply_decision_tree_regression(df, dataset_name)
 

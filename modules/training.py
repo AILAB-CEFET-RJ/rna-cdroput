@@ -29,6 +29,7 @@ from modules.regularization import ErrorBasedDropoutIR
 from modules.regularization import ErrorBasedDropoutDT
 from modules.regularization import ErrorBasedInvertedDropout
 from modules.regularization import ErrorBasedInvertedRandomDropout
+from modules.regularization import EBasedInvDynamicDp
 
 
 _MAP_METHOD_NAMES = {
@@ -36,7 +37,8 @@ _MAP_METHOD_NAMES = {
     'ErrorBasedDropoutIR': 'RNA-RI',
     'ErrorBasedDropoutDT': 'RNA-AD',
     'ErrorBasedInvertedDropout': 'RNA-',
-    'ErrorBasedInvertedRandomDropout': 'RNA-R'
+    'ErrorBasedInvertedRandomDropout': 'RNA-R',
+    'EBasedInvDynamicDp': 'RNA-D'
 }
 
 
@@ -49,7 +51,8 @@ def custom_layer_register():
         "ErrorBasedDropoutIR": ErrorBasedDropoutIR,
         "ErrorBasedDropoutDT": ErrorBasedDropoutDT,
         "ErrorBasedInvertedDropout": ErrorBasedInvertedDropout,
-        "ErrorBasedInvertedRandomDropout": ErrorBasedInvertedRandomDropout
+        "ErrorBasedInvertedRandomDropout": ErrorBasedInvertedRandomDropout,
+        "EBasedInvDynamicDp": EBasedInvDynamicDp
     }
 
 
@@ -445,26 +448,35 @@ def do_lreg_training_runs(d, cfg):
     print_times(times)
 
 
-def apply_isotonic_regression(df, dataset_name):
+def apply_isotonic_regression(df, dataset_name, do_in_ugriz):
     print('# process_isotonic_regression in dataframe')
     if dataset_name == 'kaggle_bkp':
-        df = _process_isotonic_regression(df, '', 'modelmagerr_')
+        df = _process_isotonic_regression(df, '', 'modelmagerr_', do_in_ugriz=do_in_ugriz)
     elif dataset_name == 'sdss':
-        df = _process_isotonic_regression(df, '', 'err_')
+        df = _process_isotonic_regression(df, '', 'err_', do_in_ugriz=do_in_ugriz)
     else:
-        df = _process_isotonic_regression(df, 'Err', '')
+        df = _process_isotonic_regression(df, 'Err', '', do_in_ugriz=do_in_ugriz)
 
     return df
 
 
-def _process_isotonic_regression(df, e_sufix = '', e_prefix = ''):
+def _process_isotonic_regression(df, e_sufix = '', e_prefix = '', do_in_ugriz=False):
     df_ir_err = df.copy(deep=True)
     idx = 10
     for b in 'ugriz':
-        ir, _, _, _ = _apply_isotonic_regression(df.copy(), b, e_prefix + b + e_sufix)
+        eb = e_prefix + b + e_sufix
+        ir, _, _, _ = _apply_isotonic_regression(df.copy(), b, eb)
         pred = ir.predict(df_ir_err[b])
         df_ir_err.insert(idx, f"{b}ErrExp", pred, allow_duplicates=True)
         idx = idx + 1
+
+    if do_in_ugriz:
+        for b in 'ugriz':
+            eb = f"{b}ErrExp"
+            ir, _, _, _ = _apply_isotonic_regression(df_ir_err.copy(), eb, b)
+            pred = ir.predict(df_ir_err[eb])
+            df_ir_err.insert(idx, f"{b}Exp", pred, allow_duplicates=True)
+            idx = idx + 1
 
     return df_ir_err
 
