@@ -163,7 +163,7 @@ def build_dataset_coin_data(df_train, df_val, num_features, scaler):
       if chunks == 2:
         x_train = np.hstack((x_train_ugriz, x_train_errs))
         x_val = np.hstack((x_val_ugriz, x_val_errs))
-        x_test = np.hstack((x_test_ugriz))
+        x_test = np.hstack((x_test_ugriz, x_test_errs))
       else:
         x_train = np.hstack((x_train_ugriz, x_train_errs, x_train_experrs))
         x_val = np.hstack((x_val_ugriz, x_val_errs, x_val_experrs))
