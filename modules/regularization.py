@@ -1,6 +1,5 @@
 import random
 import tensorflow as tf
-import numpy as np
 from tensorflow.keras.layers import Layer
 
 from sklearn.preprocessing import StandardScaler
@@ -21,6 +20,9 @@ def select_dropout(dropout_opt, include_errors):
         return ErrorBasedInvertedRandomDropout(include_errors)
     if dropout_opt == 'EBasedInvDynamicDp':
         return EBasedInvDynamicDp(include_errors)
+    if dropout_opt == 'ErrorOnlyDropout':
+        return ErrorOnlyDropout()
+
 
 
 def select_scaler(scaler_opt):
@@ -213,7 +215,7 @@ class ErrorBasedInvertedRandomDropout(tf.keras.layers.Layer):
 class EBasedInvDynamicDp(tf.keras.layers.Layer):
     def __init__(self, include_errors, **kwargs):
         super(EBasedInvDynamicDp, self).__init__(**kwargs)
-        print('EBasedInvRandDynamicDp')
+        print('EBasedInvDynamicDp')
         self.include_errors = include_errors
 
     def get_config(self):
@@ -257,11 +259,11 @@ class EBasedInvDynamicDp(tf.keras.layers.Layer):
             else:
                 masked_input_mag = tf.math.multiply(exp_ugriz, casted_mask_mag)
 
-
             # -- juntando ---
             masked_input = tf.math.add(masked_input_err, masked_input_mag)
 
             return masked_input
+
 
         if training:
             if self.include_errors:
@@ -275,3 +277,50 @@ class EBasedInvDynamicDp(tf.keras.layers.Layer):
                 output = ugriz_n_errors
 
         return output
+
+
+class ErrorOnlyDropout(tf.keras.layers.Layer):
+    def __init__(self, **kwargs):
+        super(ErrorOnlyDropout, self).__init__(**kwargs)
+        print('ErrorOnlyDropout')
+
+    def call(self, inputs, training=None):
+        NUM_BANDS = 5
+        NUM_BANDS_N_ERRORS = 10
+        errs = inputs[:, NUM_BANDS:2 * NUM_BANDS]
+        exp_errs = inputs[:, 2 * NUM_BANDS:3 * NUM_BANDS]
+        ugriz_n_errors = inputs[:, :NUM_BANDS_N_ERRORS]
+
+        def droppedout_errs(ugriz, errs):
+            ones = tf.ones(shape=(1, 5), dtype=tf.dtypes.float32)
+            sfmax = tf.nn.softmax(tf.math.divide(tf.math.subtract(errs, exp_errs), errs))
+
+            # -- mascarando os erros ---
+            keep_probs = tf.math.subtract(ones, sfmax[0])
+            rnd_unif = tf.random.uniform(shape=(1, 5), dtype=tf.dtypes.float32)
+            mask = tf.math.greater(keep_probs, rnd_unif)
+            casted_mask = tf.cast(mask, dtype=tf.dtypes.float32)
+
+            # -- preservando ugriz --
+            casted_mask = tf.concat([ones, casted_mask], axis=1)
+            masked_input_err = tf.math.multiply(ugriz, casted_mask)
+
+            # -- trocando pelos erros exp
+            zeros10 = tf.zeros(shape=(1, 10), dtype=tf.dtypes.float32)
+            ones10 = tf.ones(shape=(1, 10), dtype=tf.dtypes.float32)
+            casted_mask_err_exp = tf.where(casted_mask == 1.0, zeros10, ones10)
+
+            ugriz_only = inputs[:, :NUM_BANDS]
+            ugriz_n_exp_errs = tf.concat([ugriz_only, exp_errs], axis=1)
+            masked_err_exp = tf.math.multiply(ugriz_n_exp_errs, casted_mask_err_exp)
+
+            # -- juntando ---
+            masked_input = tf.math.add(masked_input_err, masked_err_exp)
+
+            return masked_input
+
+
+        output = droppedout_errs(ugriz_n_errors, errs)
+
+        return output
+

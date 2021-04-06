@@ -128,7 +128,7 @@ def mean_hist_join_plot_batch(data, size, xlim=None, ylim=None, xlabel='', ylabe
     fig, axs = plt.subplots(size[0], size[1], figsize=(8, 5 * size[0]))
 
     i = 0
-    sb =['s', '^', 'd', 'o']
+    sb =['s', '^', 'd', 'o', '*']
     for d in data:
         x = d['zphot - zspec']
         y = d['zspec']
@@ -141,7 +141,7 @@ def mean_hist_join_plot_batch(data, size, xlim=None, ylim=None, xlabel='', ylabe
             axs.tick_params(axis='x', which='both', labelbottom=True, labelsize=14)
 
             axs.plot(x, y, f"-{sb[i]}", label=d['title'])
-            #axs.plot([x,-std,std], [y,y,y], f"-{sb[i]}", label=d['title'])
+#            axs.plot([x,-std,std], [y,y,y], f"-{sb[i]}", label=d['title'])
             i = i + 1
 
         else:
@@ -277,8 +277,11 @@ def mean_hist_plot_batch_report(dir, dataset_criteria, exclusions):
         file_info = file.split("_")
         mnemonic = file_info[3]
         dataset = file_info[5]
-        if dataset == dataset_criteria and mnemonic not in exclusions:
-            fpreds_files = np.append(fpreds_files, f)
+        if dataset == dataset_criteria:
+            if exclusions == None:
+                fpreds_files = np.append(fpreds_files, f)
+            elif mnemonic not in exclusions:
+                fpreds_files = np.append(fpreds_files, f)
 
     fpreds_files.sort()
 

@@ -131,20 +131,18 @@ def build_dataset(dataframe, num_features, scaler):
   return x_train, y_train, x_test, y_test, x_val, y_val, scaler
 
 
-def build_dataset_coin_data(df_train, df_val, num_features, scaler):
+def build_dataset_coin_data(df_train, df_val, num_features, scaler, transform_test):
   all_train_data = df_train.to_numpy()
   x = all_train_data[:,0:(num_features)]
   y = all_train_data[:,-1]
 
   all_val_data = df_val.to_numpy()
-  val_nf = num_features
-  if num_features > 5:
-    val_nf = 10
 
-  x_test = all_val_data[:, 0:(val_nf)]
+  x_test = all_val_data[:, :-1]
   y_test = all_val_data[:, -1]
 
   x_train, x_val, y_train, y_val = train_test_split(x, y, test_size=0.2, random_state=42)
+  x_test_experrs = None
 
   chunks = 2
   if num_features > 10:
@@ -153,7 +151,10 @@ def build_dataset_coin_data(df_train, df_val, num_features, scaler):
   if 5 < num_features < 16:
     x_train_ugriz, x_train_errs, x_train_experrs, _ = ugriz_errs_split(x_train, chunks)
     x_val_ugriz, x_val_errs, x_val_experrs, _ = ugriz_errs_split(x_val, chunks)
-    x_test_ugriz, x_test_errs, _, _ = ugriz_errs_split(x_test, 2)
+    if transform_test:
+      x_test_ugriz, x_test_errs, x_test_experrs, _ = ugriz_errs_split(x_test, chunks)
+    else:
+      x_test_ugriz, x_test_errs, _, _ = ugriz_errs_split(x_test, 2)
 
     if scaler != None:
       x_train_ugriz = scaler.fit_transform(x_train_ugriz)
@@ -167,7 +168,10 @@ def build_dataset_coin_data(df_train, df_val, num_features, scaler):
       else:
         x_train = np.hstack((x_train_ugriz, x_train_errs, x_train_experrs))
         x_val = np.hstack((x_val_ugriz, x_val_errs, x_val_experrs))
-        x_test = np.hstack((x_test_ugriz, x_test_errs))
+        if transform_test:
+          x_test = np.hstack((x_test_ugriz, x_test_errs, x_test_experrs))
+        else:
+          x_test = np.hstack((x_test_ugriz, x_test_errs))
 
   elif num_features > 15:
     x_train_ugriz, x_train_errs, x_train_experrs, x_train_expmags = ugriz_errs_split(x_train, chunks)
@@ -193,6 +197,7 @@ def build_dataset_coin_data(df_train, df_val, num_features, scaler):
 
 
 def load_dataframe(dataset_name, coin_val):
+  pd.set_option("max_columns", None)
   if dataset_name == 'teddy' or dataset_name == 'happy':
     if coin_val:
       train = pd.read_csv(f"{dataset_name}_train_data", comment='#', delim_whitespace=True, names=['ID', 'u', 'g', 'r', 'i', 'z', 'uErr', 'gErr', 'rErr', 'iErr', 'zErr', 'redshift', 'redshiftErr'])

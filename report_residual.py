@@ -300,7 +300,7 @@ def residual_plot_batch_report(dir, dataset_criteria, use_heatmap, exclusions):
 
     save = f"residuals_{dataset_criteria}"
     #save = f"1x1_{dataset_criteria}"
-    size = [6, 3]
+    size = [5, 3]
     #size = [3, 6]
     if dataset_criteria == 'sdss':
         size = [2, 3]

@@ -22,7 +22,13 @@ _MAP_MNEMONIC_NAMES = {
     'rnaadinv': 'RNA-AD-Inv',
     'rnarriinv': 'RNA-RRI-Inv',
     'rnaradinv': 'RNA-RAD-Inv',
-    'rnaradinv10': 'RNA-RAD-Inv10'
+    'rnaradinv10': 'RNA-RAD-Inv10',
+    'rnaird05': 'RNA-DRI-Inv05',
+    'rnaird10': 'RNA-DRI-Inv10',
+    'rnairi05': 'RNA-RI-Inv05',
+    'rnairi10': 'RNA-RI-Inv10',
+    'rnairid05': 'RNA-DRI-Inv05',
+    'rnairid10': 'RNA-DRI-Inv10',
 }
 
 _MAP_SCALER_NAMES = {
@@ -396,14 +402,14 @@ def gen_table_report(dir):
                         'dataset': dataset,
                         'valset': valset,
                         'mse': d[0], 'mae': d[1], 'rmse': d[2], 'mad': d[3],'r2': d[-1],
-                        'time': timereg[f"{method}_{dataset}"]
+                        'time': timereg.get(f"{method}_{dataset}", None)
                     }
                     tbl = tbl.append([data], ignore_index=True)
 
-    tbl = tbl[tbl.dataset == "COIN/Happy"]
-    tbl = tbl[tbl.valset == "D"]
-    tbl = tbl.sort_values(['valset', 'method', 'dataset'])
-    tbl.drop(columns=['dataset', 'valset'], axis=1, inplace=True)
+    #tbl = tbl[tbl.dataset == "SDSS"]
+    #tbl = tbl[tbl.valset == "D"]
+    tbl = tbl.sort_values(['valset', 'dataset', 'method'])
+    #tbl.drop(columns=['dataset', 'valset'], axis=1, inplace=True)
     #tbl.drop(columns=['mse', 'mae', 'rmse','r2'], axis=1, inplace=True)
     print(tbl.info())
     print('=================================================================')

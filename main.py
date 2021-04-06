@@ -72,6 +72,7 @@ def parser():
    parser.add_argument('-dt', action='store_true', help='Apply Decision Tree.')
    parser.add_argument('-ierr', action='store_true', help='Include errors as features on custom ANNs.')
    parser.add_argument('-dz', action='store_true', default=False, help='Do regression for bands on custom ANNs.')
+   parser.add_argument('-tt', action='store_true', default=False, help='Apply method on coin test dataset')
 
 
 
@@ -152,6 +153,9 @@ if __name__ == '__main__':
     seed(42)
     tf.random.set_seed(42)
 
+    if 'ErrorOnlyDropout' == args.dp:
+        args.tt = True
+
     dh.download_data(dataset_name, coin_val)
     df, df_val = dh.load_dataframe(dataset_name, coin_val)
     scaler_to_use = reg.select_scaler(scaler_opt)
@@ -161,7 +165,13 @@ if __name__ == '__main__':
 
     if coin_val:
         dh.filter_col(df_val)
-        x_train, y_train, x_test, y_test, x_val, y_val, scaler = dh.build_dataset_coin_data(df, df_val, num_features, scaler_to_use)
+        if args.tt:
+            if args.ir:
+                df_val = t.apply_ir_over_test(df, df_val)
+            if args.dt:
+                df_val = t.apply_dt_over_test(df, df_val)
+
+        x_train, y_train, x_test, y_test, x_val, y_val, scaler = dh.build_dataset_coin_data(df, df_val, num_features, scaler_to_use, args.tt)
     else:
         x_train, y_train, x_test, y_test, x_val, y_val, scaler = dh.build_dataset(df, num_features, scaler_to_use)
 

@@ -260,8 +260,11 @@ def mean_hist_plot_batch_report(dir, dataset_criteria, use_heatmap, exclusions):
         file_info = file.split("_")
         mnemonic = file_info[3]
         dataset = file_info[5]
-        if dataset == dataset_criteria and mnemonic not in exclusions:
-            fpreds_files = np.append(fpreds_files, f)
+        if dataset == dataset_criteria:
+            if exclusions == None:
+                fpreds_files = np.append(fpreds_files, f)
+            elif mnemonic not in exclusions:
+                fpreds_files = np.append(fpreds_files, f)
 
     fpreds_files.sort()
 
@@ -292,10 +295,10 @@ def mean_hist_plot_batch_report(dir, dataset_criteria, use_heatmap, exclusions):
 
     save = f"means_hist_{dataset_criteria}"
     #save = f"1x1_{dataset_criteria}"
-    size = [4, 3]
+    size = [5, 3]
     #size = [3, 6]
     if dataset_criteria == 'sdss':
-        size = [2, 2]
+        size = [2, 3]
         #size = [2, 3]
 
     mean_hist_plot_batch(

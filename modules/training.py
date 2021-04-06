@@ -30,6 +30,7 @@ from modules.regularization import ErrorBasedDropoutDT
 from modules.regularization import ErrorBasedInvertedDropout
 from modules.regularization import ErrorBasedInvertedRandomDropout
 from modules.regularization import EBasedInvDynamicDp
+from modules.regularization import ErrorOnlyDropout
 
 
 _MAP_METHOD_NAMES = {
@@ -38,7 +39,8 @@ _MAP_METHOD_NAMES = {
     'ErrorBasedDropoutDT': 'RNA-AD',
     'ErrorBasedInvertedDropout': 'RNA-',
     'ErrorBasedInvertedRandomDropout': 'RNA-R',
-    'EBasedInvDynamicDp': 'RNA-D'
+    'EBasedInvDynamicDp': 'RNA-D',
+    'ErrorOnlyDropout': 'RNA-E'
 }
 
 
@@ -48,11 +50,12 @@ class Object(object):
 
 def custom_layer_register():
     return {
-        "ErrorBasedDropoutIR": ErrorBasedDropoutIR,
-        "ErrorBasedDropoutDT": ErrorBasedDropoutDT,
-        "ErrorBasedInvertedDropout": ErrorBasedInvertedDropout,
-        "ErrorBasedInvertedRandomDropout": ErrorBasedInvertedRandomDropout,
-        "EBasedInvDynamicDp": EBasedInvDynamicDp
+        'ErrorBasedDropoutIR': ErrorBasedDropoutIR,
+        'ErrorBasedDropoutDT': ErrorBasedDropoutDT,
+        'ErrorBasedInvertedDropout': ErrorBasedInvertedDropout,
+        'ErrorBasedInvertedRandomDropout': ErrorBasedInvertedRandomDropout,
+        'EBasedInvDynamicDp': EBasedInvDynamicDp,
+        'ErrorOnlyDropout': ErrorOnlyDropout
     }
 
 
@@ -196,7 +199,7 @@ def do_scoring_over(d, cfg, models):
         i = 0
 
         for model in models:
-            scores = model.evaluate(d.x_test, d.y_test, verbose=0)
+            scores = model.evaluate(d.x_test, d.y_test, verbose=10)
             print('Scores (loss, mse, mae) for run %d: %s' % (i, scores))
             all_scores = np.vstack((all_scores, scores))
 
@@ -454,6 +457,42 @@ def do_lreg_training_runs(d, cfg):
     print_times(times)
 
 
+def apply_dt_over_test(df, df_test):
+    print('# process_isotonic_regression in test dataframe')
+    df_test = _process_dt_over_test(df, df_test, 'Err', '')
+
+    return df_test
+
+def _process_dt_over_test(df, df_test, e_sufix = '', e_prefix = ''):
+    df_dt_err = df_test.copy(deep=True)
+    idx = 10
+    for b in 'ugriz':
+        dt, _, _, _ = _apply_decision_tree_regression(df.copy(), b, e_prefix + b + e_sufix)
+        pred = dt.predict(df_dt_err[[b]])
+        df_dt_err.insert(idx, f"{b}ErrExp", pred, allow_duplicates=True)
+        idx = idx + 1
+
+    return df_dt_err
+
+def apply_ir_over_test(df, df_test):
+    print('# process_isotonic_regression in test dataframe')
+    df_test = _process_ir_over_test(df, df_test, 'Err', '')
+
+    return df_test
+
+def _process_ir_over_test(df, df_test, e_sufix = '', e_prefix = ''):
+    df_ir_err = df_test.copy(deep=True)
+    idx = 10
+    for b in 'ugriz':
+        eb = e_prefix + b + e_sufix
+        ir, _, _, _ = _apply_isotonic_regression(df.copy(), b, eb)
+        pred = ir.predict(df_ir_err[b])
+        df_ir_err.insert(idx, f"{b}ErrExp", pred, allow_duplicates=True)
+        idx = idx + 1
+
+    return df_ir_err
+
+
 def apply_isotonic_regression(df, dataset_name, do_in_ugriz):
     print('# process_isotonic_regression in dataframe')
     if dataset_name == 'kaggle_bkp':
@@ -514,8 +553,9 @@ def _process_decision_tree_regression(df, e_sufix = '', e_prefix = ''):
     df_dt_err = df.copy()
     idx = 10
     for b in 'ugriz':
-        ir, _, _, y_ = _apply_decision_tree_regression(df_dt_err, b, e_prefix + b + e_sufix)
-        df_dt_err.insert(idx, f"{b}ErrExp", y_, allow_duplicates=True)
+        dt, _, _, _ = _apply_decision_tree_regression(df_dt_err, b, e_prefix + b + e_sufix)
+        pred = dt.predict(df_dt_err[[b]])
+        df_dt_err.insert(idx, f"{b}ErrExp", pred, allow_duplicates=True)
         idx = idx + 1
 
     return df_dt_err
@@ -525,7 +565,6 @@ def _apply_decision_tree_regression(df, magCol, errCol, max_depth=5):
     X = df[[magCol]]
     y = df[[errCol]]
     regressor = DecisionTreeRegressor(random_state=0, max_depth = max_depth)
-    regressor.fit(X, y)
-    y_expected = regressor.predict(X)
+    y_expected =regressor.fit(X, y)
 
     return regressor, X, y, y_expected
