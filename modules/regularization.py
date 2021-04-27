@@ -87,7 +87,7 @@ class ErrorBasedDropoutDT(ErrorBasedDropoutIR):
         print('ErrorBasedDropoutDT')
 
 
-class ErrorBasedInvertedDropout(tf.keras.layers.Layer):
+class ErrorBasedInvertedDropout(Layer):
     #def __init__(self, **kwargs):
     #    super(ErrorBasedInvertedDropout, self).__init__(**kwargs)
     #    print('ErrorBasedInvertedDropout')
@@ -143,7 +143,7 @@ class ErrorBasedInvertedDropout(tf.keras.layers.Layer):
         return output
 
 
-class ErrorBasedInvertedRandomDropout(tf.keras.layers.Layer):
+class ErrorBasedInvertedRandomDropout(Layer):
     def __init__(self, include_errors, **kwargs):
         super(ErrorBasedInvertedRandomDropout, self).__init__(**kwargs)
         print('ErrorBasedInvertedRandomDropout')
@@ -212,7 +212,7 @@ class ErrorBasedInvertedRandomDropout(tf.keras.layers.Layer):
         return output
 
 
-class EBasedInvDynamicDp(tf.keras.layers.Layer):
+class EBasedInvDynamicDp(Layer):
     def __init__(self, include_errors, **kwargs):
         super(EBasedInvDynamicDp, self).__init__(**kwargs)
         print('EBasedInvDynamicDp')
@@ -264,7 +264,6 @@ class EBasedInvDynamicDp(tf.keras.layers.Layer):
 
             return masked_input
 
-
         if training:
             if self.include_errors:
                 output = droppedout_ugriz(ugriz_n_errors, errs)
@@ -279,25 +278,27 @@ class EBasedInvDynamicDp(tf.keras.layers.Layer):
         return output
 
 
-class ErrorOnlyDropout(tf.keras.layers.Layer):
+class ErrorOnlyDropout(Layer):
     def __init__(self, **kwargs):
         super(ErrorOnlyDropout, self).__init__(**kwargs)
         print('ErrorOnlyDropout')
 
     def call(self, inputs, training=None):
+        dim = tf.shape(inputs)[0]
         NUM_BANDS = 5
         NUM_BANDS_N_ERRORS = 10
         errs = inputs[:, NUM_BANDS:2 * NUM_BANDS]
         exp_errs = inputs[:, 2 * NUM_BANDS:3 * NUM_BANDS]
         ugriz_n_errors = inputs[:, :NUM_BANDS_N_ERRORS]
+        ids = tf.cast(inputs[:, -1], tf.int64)
 
         def droppedout_errs(ugriz, errs):
-            ones = tf.ones(shape=(1, 5), dtype=tf.dtypes.float32)
+            ones = tf.ones(shape=(dim, 5), dtype=tf.dtypes.float32)
             sfmax = tf.nn.softmax(tf.math.divide(tf.math.subtract(errs, exp_errs), errs))
 
             # -- mascarando os erros ---
             keep_probs = tf.math.subtract(ones, sfmax[0])
-            rnd_unif = tf.random.uniform(shape=(1, 5), dtype=tf.dtypes.float32)
+            rnd_unif = tf.random.uniform(shape=(dim, 5), dtype=tf.dtypes.float32)
             mask = tf.math.greater(keep_probs, rnd_unif)
             casted_mask = tf.cast(mask, dtype=tf.dtypes.float32)
 
@@ -306,8 +307,8 @@ class ErrorOnlyDropout(tf.keras.layers.Layer):
             masked_input_err = tf.math.multiply(ugriz, casted_mask)
 
             # -- trocando pelos erros exp
-            zeros10 = tf.zeros(shape=(1, 10), dtype=tf.dtypes.float32)
-            ones10 = tf.ones(shape=(1, 10), dtype=tf.dtypes.float32)
+            zeros10 = tf.zeros(shape=(dim, 10), dtype=tf.dtypes.float32)
+            ones10 = tf.ones(shape=(dim, 10), dtype=tf.dtypes.float32)
             casted_mask_err_exp = tf.where(casted_mask == 1.0, zeros10, ones10)
 
             ugriz_only = inputs[:, :NUM_BANDS]
@@ -317,10 +318,21 @@ class ErrorOnlyDropout(tf.keras.layers.Layer):
             # -- juntando ---
             masked_input = tf.math.add(masked_input_err, masked_err_exp)
 
-            return masked_input
+            # print ids
+            ids10= tf.repeat(tf.reshape(ids, [dim, 1]), 10, axis=1)
+            id_masks = tf.where(casted_mask == 0, ids10, 0)
 
+            return masked_input, id_masks
 
-        output = droppedout_errs(ugriz_n_errors, errs)
+        if training:
+            output, _ = droppedout_errs(ugriz_n_errors, errs)
+        else:
+            if inputs.shape[1] == 16 :
+                print('[Prediction Outliers]')
+                output, id_masks = droppedout_errs(ugriz_n_errors, errs)
+                tf.print(tf.strings.format("id: {}", (id_masks), summarize=-1), summarize=-1)
+            else:
+                output, _ = droppedout_errs(ugriz_n_errors, errs)
 
         return output
 

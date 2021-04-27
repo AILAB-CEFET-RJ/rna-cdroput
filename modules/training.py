@@ -203,12 +203,12 @@ def do_scoring_over(d, cfg, models):
             print('Scores (loss, mse, mae) for run %d: %s' % (i, scores))
             all_scores = np.vstack((all_scores, scores))
 
-            outputs = model.predict(d.x_test)
+            outputs = model.predict(d.x_test, batch_size=cfg.batch_size)
             mse = mean_squared_error(d.y_test, outputs)
             mae = mean_absolute_error(d.y_test, outputs)
             rmse = sqrt(mse)
             r2 = r2_score(d.y_test, outputs)
-            mad = score_mad(d.y_test.flatten(), outputs.flatten())
+            mad = score_mad(d.y_test.to_numpy(), outputs.flatten())
 
             mses = np.append(mses, mse)
             maes = np.append(maes, mae)
@@ -301,13 +301,9 @@ def callbacks(cfg, run):
 def do_training_runs(d, cfg, verbose, customized_dropout):
     print(f'Using device: {cfg.device_name}')
 
-    bs = 32
-    if cfg.batch_size:
-        bs = cfg.batch_size
-    print(f'Using batch size: {bs}')
-
     with tf.device(cfg.device_name):
         times = np.array([])
+        tf.constant(cfg.df_ids_map, name='idmap')
 
         for i in range(cfg.num_runs):
             print('***Run #%d***' % i)
@@ -316,7 +312,7 @@ def do_training_runs(d, cfg, verbose, customized_dropout):
             hist = model.fit(d.x_train, d.y_train,
                             validation_data = (d.x_val, d.y_val),
                             epochs = cfg.epochs,
-                            batch_size = bs,
+                            batch_size = cfg.batch_size,
                             verbose = verbose,
                             callbacks = callbacks(cfg, i))
 
@@ -339,7 +335,7 @@ def neural_network(cfg, dropout=None):
 
     model.add(layers.Dense(cfg.l1_units, input_dim=cfg.D, kernel_initializer='normal', activation='relu'))
     model.add(layers.Dense(cfg.l2_units, kernel_initializer='normal', activation='relu'))
-    model.add(layers.Dense(1, bias_initializer=initializers.Constant(cfg.bias_output_layer)))
+    model.add(layers.Dense(1, bias_initializer=initializers.Constant(cfg.bias_output_layer.to_numpy())))
 
     adam = tf.keras.optimizers.Adam(lr=cfg.learning_rate)
     model.compile(loss='mse',

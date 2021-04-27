@@ -43,7 +43,12 @@ def build_cfg(D, neurons_0, neurons_1, learning_rate, epochs, num_runs, args):
     cfg.args = args
     cfg.no_early_stopping = args.noes
     cfg.include_errors = args.ierr
-    cfg.batch_size = args.bs
+
+    bs = 32
+    if args.bs:
+        bs = args.bs
+    print(f'Using batch size: {bs}')
+    cfg.batch_size = bs
 
     return cfg
 
@@ -160,8 +165,9 @@ if __name__ == '__main__':
     df, df_val = dh.load_dataframe(dataset_name, coin_val)
     scaler_to_use = reg.select_scaler(scaler_opt)
 
-    dh.filter_col(df)
+    df = dh.filter_col(df)
     df = apply_transforms(df, dropout_opt, subsample, dataset_name, args.rmne, cuts, args)
+    df_ids_map = None
 
     if coin_val:
         dh.filter_col(df_val)
@@ -173,6 +179,11 @@ if __name__ == '__main__':
 
         x_train, y_train, x_test, y_test, x_val, y_val, scaler = dh.build_dataset_coin_data(df, df_val, num_features, scaler_to_use, args.tt)
     else:
+        df.insert(df.columns.get_loc("objid"), 'refid', range(len(df)))
+        df_ids_map = df[['objid', 'refid']]
+        df_ids_map.to_csv('refids.csv')
+        df.drop(columns=['objid'], axis=1, inplace=True)
+
         x_train, y_train, x_test, y_test, x_val, y_val, scaler = dh.build_dataset(df, num_features, scaler_to_use)
 
     print('x_train.shape: ', x_train.shape)
@@ -217,6 +228,7 @@ if __name__ == '__main__':
 
         cfg = build_cfg(D, neurons_0, neurons_1, learning_rate, epochs, num_runs, args)
         cfg.bias_output_layer = y_train.mean()
+        cfg.df_ids_map = df_ids_map
 
         print(f'input dim:{D}, feature dim: {f} for hl_0[{neurons_0}], hl_1[{neurons_1}]')
 
@@ -229,6 +241,7 @@ if __name__ == '__main__':
         model_data = t.do_scoring_over(d, cfg, models)
         model = t.get_best_model(model_data)
 
-        outputs = model.predict(x_test)
+        print("##PREDS")
+        outputs = model.predict(x_test, batch_size=cfg.batch_size)
 
-    t.serialize_results(y_test.flatten(), outputs.flatten(), cfg, coin_val)
+    t.serialize_results(y_test.to_numpy().flatten(), outputs.flatten(), cfg, coin_val)

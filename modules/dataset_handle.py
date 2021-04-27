@@ -6,6 +6,8 @@ import gdown
 
 from sklearn.model_selection import train_test_split
 
+from sklearn_pandas import DataFrameMapper
+
 _val_idx = {"B": 1, "C": 2, "D": 3}
 
 
@@ -37,17 +39,24 @@ def remove_col_df(dataframe, col_to_remove):
 
 
 def ugriz_errs_split(x, chunks=2):
-  x_splited = np.hsplit(x, chunks)
+  dim = x.shape[1]
+  pad = int(dim / chunks)
   if chunks == 2:
-    return x_splited[0], x_splited[1], [[]], [[]]
+    return x.iloc[:, :pad], x.iloc[:, pad:pad*2], [[]], [[]]
   elif chunks == 3:
-    return x_splited[0], x_splited[1], x_splited[2], [[]]
+    return x.iloc[:, :pad], x.iloc[:, pad:pad*2], x.iloc[:, pad*2:pad*3], [[]]
   else:
-    return x_splited[0], x_splited[1], x_splited[2], x_splited[3]
+    return x.iloc[:, :pad], x.iloc[:, pad:pad*2], x.iloc[:, pad*2:pad*3], x.iloc[:, pad*3:pad*4]
 
 
 def filter_col(dataframe):
-  remove_col_df(dataframe, ('ID', '#ID', 'redshiftErr','objid', 'specobjid', 'class'))
+  #remove_col_df(dataframe, ('ID', '#ID', 'redshiftErr','objid', 'specobjid', 'class'))
+  remove_col_df(dataframe, ('ID', '#ID', 'redshiftErr', 'specobjid', 'class'))
+
+  if 'objid' in dataframe.columns:
+    dataframe = dataframe[['u','g','r','i','z','err_u','err_g','err_r','err_i','err_z','objid','redshift']]
+
+  return dataframe
 
 
 def filter_negative_data(dataframe, dataset):
@@ -78,12 +87,15 @@ def _filter_negative_data(dataframe, s='', p=''):
 
 
 def build_dataset(dataframe, num_features, scaler):
-  all_data = dataframe.to_numpy()
-  x = all_data[:,0:(num_features)]
-  y = all_data[:,-1]
+  x = dataframe.iloc[:, :-1]
+  y = dataframe[['redshift']]
 
   x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=42)
   x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=0.2, random_state=42)
+
+  x_train = x_train.iloc[:, :-1]
+  x_val = x_val.iloc[:, :-1]
+  x_test_ids = x_test.iloc[:, -1]
 
   chunks = 2
   if num_features > 10:
@@ -95,18 +107,25 @@ def build_dataset(dataframe, num_features, scaler):
     x_test_ugriz, x_test_errs, x_test_experrs, _ = ugriz_errs_split(x_test, chunks)
 
     if scaler != None:
-      x_train_ugriz = scaler.fit_transform(x_train_ugriz)
-      x_val_ugriz = scaler.transform(x_val_ugriz)
-      x_test_ugriz = scaler.transform(x_test_ugriz)
+      mapper = DataFrameMapper([(x_train_ugriz.columns, scaler)])
+      x_train_ugriz_s = mapper.fit_transform(x_train_ugriz)
+      x_train_ugriz = pd.DataFrame(x_train_ugriz_s, index=x_train_ugriz.index, columns=x_train_ugriz.columns)
+
+      x_val_ugriz_s = mapper.transform(x_val_ugriz)
+      x_val_ugriz = pd.DataFrame(x_val_ugriz_s, index=x_val_ugriz.index, columns=x_val_ugriz.columns)
+
+      x_test_ugriz_s = mapper.transform(x_test_ugriz)
+      x_test_ugriz = pd.DataFrame(x_test_ugriz_s, index=x_test_ugriz.index, columns=x_test_ugriz.columns)
+
 
       if chunks == 2:
-        x_train = np.hstack((x_train_ugriz, x_train_errs))
-        x_val = np.hstack((x_val_ugriz, x_val_errs))
-        x_test = np.hstack((x_test_ugriz, x_test_errs))
+        x_train = pd.concat([x_train_ugriz, x_train_errs], axis=1)
+        x_val = pd.concat([x_val_ugriz, x_val_errs], axis=1)
+        x_test = pd.concat([x_test_ugriz, x_test_errs], axis=1)
       else:
-        x_train = np.hstack((x_train_ugriz, x_train_errs, x_train_experrs))
-        x_val = np.hstack((x_val_ugriz, x_val_errs, x_val_experrs))
-        x_test = np.hstack((x_test_ugriz, x_test_errs, x_test_experrs))
+        x_train = pd.concat([x_train_ugriz, x_train_errs, x_train_experrs], axis=1)
+        x_val = pd.concat([x_val_ugriz, x_val_errs, x_val_experrs], axis=1)
+        x_test = pd.concat([x_test_ugriz, x_test_errs, x_test_experrs], axis=1)
 
   elif num_features > 15:
     x_train_ugriz, x_train_errs, x_train_experrs, x_train_expmags = ugriz_errs_split(x_train, chunks)
@@ -114,19 +133,33 @@ def build_dataset(dataframe, num_features, scaler):
     x_test_ugriz, x_test_errs, x_test_experrs, x_test_expmags = ugriz_errs_split(x_test, chunks)
 
     if scaler != None:
-      x_train_ugriz = scaler.fit_transform(x_train_ugriz)
-      x_val_ugriz = scaler.transform(x_val_ugriz)
-      x_test_ugriz = scaler.transform(x_test_ugriz)
+      mapper = DataFrameMapper([(x_train_ugriz.columns, scaler)])
+      x_train_ugriz_s = mapper.fit_transform(x_train_ugriz)
+      x_train_ugriz = pd.DataFrame(x_train_ugriz_s, index=x_train_ugriz.index, columns=x_train_ugriz.columns)
 
-      x_train = np.hstack((x_train_ugriz, x_train_errs, x_train_experrs, x_train_expmags))
-      x_val = np.hstack((x_val_ugriz, x_val_errs, x_val_experrs, x_val_expmags))
-      x_test = np.hstack((x_test_ugriz, x_test_errs, x_test_experrs, x_test_expmags))
+      x_val_ugriz_s = mapper.transform(x_val_ugriz)
+      x_val_ugriz = pd.DataFrame(x_val_ugriz_s, index=x_val_ugriz.index, columns=x_val_ugriz.columns)
+
+      x_test_ugriz_s = mapper.transform(x_test_ugriz)
+      x_test_ugriz = pd.DataFrame(x_test_ugriz_s, index=x_test_ugriz.index, columns=x_test_ugriz.columns)
+
+      x_train = pd.concat([x_train_ugriz, x_train_errs, x_train_experrs, x_train_expmags], axis=1)
+      x_val = pd.concat([x_val_ugriz, x_val_errs, x_val_experrs, x_val_expmags], axis=1)
+      x_test = pd.concat([x_test_ugriz, x_test_errs, x_test_experrs, x_test_expmags], axis=1)
 
   else:
     if scaler != None:
-      x_train = scaler.fit_transform(x_train)
-      x_val = scaler.transform(x_val)
-      x_test = scaler.transform(x_test)
+      mapper = DataFrameMapper([(x_train.columns, scaler)])
+      x_train_s = mapper.fit_transform(x_train)
+      x_train = pd.DataFrame(x_train_s, index=x_train.index, columns=x_train.columns)
+
+      x_val_s = mapper.transform(x_val)
+      x_val = pd.DataFrame(x_val_s, index=x_val.index, columns=x_val.columns)
+
+      x_test_s = mapper.transform(x_test)
+      x_test = pd.DataFrame(x_test_s, index=x_test.index, columns=x_test.columns)
+
+  x_test = pd.concat([x_test, x_test_ids], axis=1)
 
   return x_train, y_train, x_test, y_test, x_val, y_val, scaler
 

@@ -4,7 +4,6 @@ import pandas as pd
 import glob
 
 from datetime import timedelta
-from modules.plot import plot_jointd_sct_m
 from modules.plot import heatmap_plot
 
 import matplotlib.pyplot as plt
@@ -29,6 +28,7 @@ _MAP_MNEMONIC_NAMES = {
     'rnairi10': 'RNA-RI-Inv10',
     'rnairid05': 'RNA-DRI-Inv05',
     'rnairid10': 'RNA-DRI-Inv10',
+    'rnaedt10': 'RNA-EAD10'
 }
 
 _MAP_SCALER_NAMES = {
