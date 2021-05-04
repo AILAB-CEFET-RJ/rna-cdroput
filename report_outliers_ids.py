@@ -76,5 +76,5 @@ if __name__ == '__main__':
         ax = df_aux[df_aux['outlier'] == False].plot.scatter(x=b, y=f"err_{b}", c='b')
         df_aux[df_aux['outlier'] == True].plot.scatter(x=b, y=f"err_{b}", c='r', ax=ax)
         plt.show()
-        plt.savefig('outliers_per_band.png')
+        plt.savefig(f"outliers_{b}_band.png")
     print('Done')
