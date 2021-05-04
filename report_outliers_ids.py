@@ -36,12 +36,15 @@ if __name__ == '__main__':
     with open(args.output, 'r') as file:
         preds_found = False
         for line in file:
-            if '##PREDS' in line:
+            if '##PREDS INIT' in line:
                 preds_found = True
                 continue
 
-            if 'Result[real_' in line:
+            if '##PREDS END' in line:
                 preds_found = False
+
+            if '[Prediction Outliers]' in line:
+                continue
 
             if preds_found:
                 v = line.replace('id: [', '')\
@@ -73,4 +76,5 @@ if __name__ == '__main__':
         ax = df_aux[df_aux['outlier'] == False].plot.scatter(x=b, y=f"err_{b}", c='b')
         df_aux[df_aux['outlier'] == True].plot.scatter(x=b, y=f"err_{b}", c='r', ax=ax)
         plt.show()
+        plt.savefig('outliers_per_band.png')
     print('Done')
