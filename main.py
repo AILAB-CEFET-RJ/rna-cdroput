@@ -241,7 +241,7 @@ if __name__ == '__main__':
         model_data = t.do_scoring_over(d, cfg, models)
         model = t.get_best_model(model_data)
 
-        tf.print("##PREDS", output_stream='pred_id.log')
+        tf.print("##PREDS", output_stream='file://pred_id.log')
         outputs = model.predict(x_test, batch_size=cfg.batch_size)
 
     t.serialize_results(y_test.to_numpy().flatten(), outputs.flatten(), cfg, coin_val)
