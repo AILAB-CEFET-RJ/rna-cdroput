@@ -69,6 +69,13 @@ if __name__ == '__main__':
         df_outl = df[['objid', b, f"err_{b}"]]
         df_outl.insert(3, 'outlier', df[['objid']].isin(outliers[b]))
         df_outl_pband[b] = df_outl
+        print(f"Band [{b}]:")
+        total = df_outl.shape[0]
+        oulrs = df_outl[df_outl['outlier'] == True].shape[0]
+        print(f"\t total = [{total}]:")
+        print(f"\t outliers = [{oulrs}]:")
+        print(f"\t outliers rate = {(oulrs/total) * 100}%")
+        print('--------------------------')
 
     print('Ploting ...')
     for b in 'ugriz':
