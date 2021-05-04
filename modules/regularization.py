@@ -328,9 +328,13 @@ class ErrorOnlyDropout(Layer):
             output, _ = droppedout_errs(ugriz_n_errors, errs)
         else:
             if inputs.shape[1] == 16 :
-                print('[Prediction Outliers]')
+                tf.print('[Prediction Outliers]', output_stream='pred_id.log')
                 output, id_masks = droppedout_errs(ugriz_n_errors, errs)
-                tf.print(tf.strings.format("id: {}", (id_masks), summarize=-1), summarize=-1)
+                tf.print(tf.strings.format("id: {}", (id_masks), summarize=-1),
+                         summarize=-1,
+                         output_stream='pred_id.log'
+                )
+
             else:
                 output, _ = droppedout_errs(ugriz_n_errors, errs)
 
