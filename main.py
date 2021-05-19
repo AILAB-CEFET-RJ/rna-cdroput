@@ -185,6 +185,7 @@ if __name__ == '__main__':
         df.drop(columns=['objid'], axis=1, inplace=True)
 
         x_train, y_train, x_test, y_test, x_val, y_val, scaler = dh.build_dataset(df, num_features, scaler_to_use)
+        dh.dump_test_set(x_test, y_test)
 
     print('x_train.shape: ', x_train.shape)
     print('x_val.shape: ', x_val.shape)

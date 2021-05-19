@@ -278,7 +278,7 @@ def download_data(dataset_name, coin_val):
     if os.path.isfile('sdss_train_data.csv'):
       print("Dataset Found!")
     else:
-      download_sdss_alternative()
+      download_sdss()
 
 
 def download_teddy(data_chunk='A'):
@@ -324,6 +324,11 @@ def download_sdss_alternative():
   output = 'sdss_train_data.csv'
   gdown.download(url, output, quiet=False)
 
+def download_sdss():
+  url = f"https://zenodo.org/record/4752020/files/sdss_train_data.csv?download=1"
+  output = 'sdss_train_data.csv'
+  gdown.download(url, output, quiet=False)
+
 def download_kaggle_alternative():
   def download_file_from_google_drive(id):
     URL = "https://docs.google.com/uc?export=download"
@@ -358,3 +363,8 @@ def download_kaggle_alternative():
 
 
   download_file_from_google_drive('1xCQzmusNSt65zQnjsrnddLhuCB5WdYcl')
+
+
+def dump_test_set(x_test, y_test):
+  df_test = pd.concat([x_test, y_test], axis=1).reindex(x_test.index)
+  df_test.to_csv('test_dataset.csv')
