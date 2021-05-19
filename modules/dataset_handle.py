@@ -14,6 +14,8 @@ _val_idx = {"B": 1, "C": 2, "D": 3}
 def cut_val_band(df, band, val):
   return df[df[band] <= val]
 
+def cut_flag(df, attr, value):
+  return df[df[attr] != value]
 
 def cut_all_val_errs(df, dataset_name, val):
   if dataset_name == 'sdss':
@@ -51,10 +53,12 @@ def ugriz_errs_split(x, chunks=2):
 
 def filter_col(dataframe):
   #remove_col_df(dataframe, ('ID', '#ID', 'redshiftErr','objid', 'specobjid', 'class'))
-  remove_col_df(dataframe, ('ID', '#ID', 'redshiftErr', 'specobjid', 'class'))
+  remove_col_df(dataframe, ('ID', '#ID', 'redshiftErr', 'specobjid', 'class', 'clean'))
 
   if 'objid' in dataframe.columns:
-    dataframe = dataframe[['u','g','r','i','z','err_u','err_g','err_r','err_i','err_z','objid','redshift']]
+    objid = dataframe.pop('objid')
+    size = len(dataframe.columns)
+    dataframe.insert(size-1, 'objid', objid)
 
   return dataframe
 
@@ -368,3 +372,7 @@ def download_kaggle_alternative():
 def dump_test_set(x_test, y_test):
   df_test = pd.concat([x_test, y_test], axis=1).reindex(x_test.index)
   df_test.to_csv('test_dataset.csv')
+
+
+def load_test_dataframe(dataset):
+  return pd.read_csv(dataset)

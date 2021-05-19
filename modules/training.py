@@ -494,16 +494,15 @@ def apply_isotonic_regression(df, dataset_name, do_in_ugriz):
     if dataset_name == 'kaggle_bkp':
         df = _process_isotonic_regression(df, '', 'modelmagerr_', do_in_ugriz=do_in_ugriz)
     elif dataset_name == 'sdss':
-        df = _process_isotonic_regression(df, '', 'err_', do_in_ugriz=do_in_ugriz)
+        df = _process_isotonic_regression(df, '', 'err_', do_in_ugriz=do_in_ugriz, idx=11)
     else:
         df = _process_isotonic_regression(df, 'Err', '', do_in_ugriz=do_in_ugriz)
 
     return df
 
 
-def _process_isotonic_regression(df, e_sufix = '', e_prefix = '', do_in_ugriz=False):
+def _process_isotonic_regression(df, e_sufix = '', e_prefix = '', do_in_ugriz=False, idx=10):
     df_ir_err = df.copy(deep=True)
-    idx = 10
     for b in 'ugriz':
         eb = e_prefix + b + e_sufix
         ir, _, _, _ = _apply_isotonic_regression(df.copy(), b, eb)
@@ -538,16 +537,15 @@ def apply_decision_tree_regression(df, dataset_name):
     if dataset_name == 'kaggle_bkp':
         df = _process_decision_tree_regression(df, '', 'modelmagerr_')
     elif dataset_name == 'sdss':
-        df = _process_decision_tree_regression(df, '', 'err_')
+        df = _process_decision_tree_regression(df, '', 'err_', idx=11)
     else:
         df = _process_decision_tree_regression(df, 'Err', '')
 
     return df
 
 
-def _process_decision_tree_regression(df, e_sufix = '', e_prefix = ''):
+def _process_decision_tree_regression(df, e_sufix = '', e_prefix = '', idx=10):
     df_dt_err = df.copy()
-    idx = 10
     for b in 'ugriz':
         dt, _, _, _ = _apply_decision_tree_regression(df_dt_err, b, e_prefix + b + e_sufix)
         pred = dt.predict(df_dt_err[[b]])

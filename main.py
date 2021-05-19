@@ -93,6 +93,7 @@ def apply_transforms(dataframe, dropout_opt, subsample, dataset_name, rmne, cuts
     if cuts:
         df = dh.cut_all_val_errs(df, dataset_name, 1.0)
         df = dh.cut_val_band(df, 'u', 25.0)
+        df = dh.cut_flag(df, 'clean', 0)
 
     if subsample is not None:
         subs_df = df.sample(n=subsample, random_state=42)
@@ -165,8 +166,8 @@ if __name__ == '__main__':
     df, df_val = dh.load_dataframe(dataset_name, coin_val)
     scaler_to_use = reg.select_scaler(scaler_opt)
 
-    df = dh.filter_col(df)
     df = apply_transforms(df, dropout_opt, subsample, dataset_name, args.rmne, cuts, args)
+    df = dh.filter_col(df)
     df_ids_map = None
 
     if coin_val:
