@@ -90,16 +90,17 @@ def _filter_negative_data(dataframe, s='', p=''):
   return dataframe
 
 
-def build_dataset(dataframe, num_features, scaler):
+def build_dataset(dataframe, num_features, scaler, include_id=False):
   x = dataframe.iloc[:, :-1]
   y = dataframe[['redshift']]
 
   x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=42)
   x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=0.2, random_state=42)
 
-  x_train = x_train.iloc[:, :-1]
-  x_val = x_val.iloc[:, :-1]
-  x_test_ids = x_test.iloc[:, -1]
+  if include_id:
+    x_train = x_train.iloc[:, :-1]
+    x_val = x_val.iloc[:, :-1]
+    x_test_ids = x_test.iloc[:, -1]
 
   chunks = 2
   if num_features > 10:
@@ -163,7 +164,8 @@ def build_dataset(dataframe, num_features, scaler):
       x_test_s = mapper.transform(x_test)
       x_test = pd.DataFrame(x_test_s, index=x_test.index, columns=x_test.columns)
 
-  x_test = pd.concat([x_test, x_test_ids], axis=1)
+  if include_id:
+    x_test = pd.concat([x_test, x_test_ids], axis=1)
 
   return x_train, y_train, x_test, y_test, x_val, y_val, scaler
 
@@ -376,3 +378,7 @@ def dump_test_set(x_test, y_test):
 
 def load_test_dataframe(dataset):
   return pd.read_csv(dataset)
+
+
+def empty():
+  return pd.DataFrame()

@@ -303,7 +303,8 @@ def do_training_runs(d, cfg, verbose, customized_dropout):
 
     with tf.device(cfg.device_name):
         times = np.array([])
-        tf.constant(cfg.df_ids_map, name='idmap')
+        if not cfg.df_ids_map.empty:
+            tf.constant(cfg.df_ids_map, name='idmap')
 
         for i in range(cfg.num_runs):
             print('***Run #%d***' % i)

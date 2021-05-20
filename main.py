@@ -168,7 +168,7 @@ if __name__ == '__main__':
 
     df = apply_transforms(df, dropout_opt, subsample, dataset_name, args.rmne, cuts, args)
     df = dh.filter_col(df)
-    df_ids_map = None
+    df_ids_map = dh.empty()
 
     if coin_val:
         dh.filter_col(df_val)
@@ -180,13 +180,17 @@ if __name__ == '__main__':
 
         x_train, y_train, x_test, y_test, x_val, y_val, scaler = dh.build_dataset_coin_data(df, df_val, num_features, scaler_to_use, args.tt)
     else:
-        df.insert(df.columns.get_loc("objid"), 'refid', range(len(df)))
-        df_ids_map = df[['objid', 'refid']]
-        df_ids_map.to_csv('refids.csv')
-        df.drop(columns=['objid'], axis=1, inplace=True)
+        if args.dp:
+            df.insert(df.columns.get_loc("objid"), 'refid', range(len(df)))
+            df_ids_map = df[['objid', 'refid']]
+            df_ids_map.to_csv('refids.csv')
 
-        x_train, y_train, x_test, y_test, x_val, y_val, scaler = dh.build_dataset(df, num_features, scaler_to_use)
-        dh.dump_test_set(x_test, y_test)
+        df.drop(columns=['objid'], axis=1, inplace=True)
+        include_id = args.dp != None
+        x_train, y_train, x_test, y_test, x_val, y_val, scaler = dh.build_dataset(df, num_features, scaler_to_use, include_id=include_id)
+
+        if args.dp:
+            dh.dump_test_set(x_test, y_test)
 
     print('x_train.shape: ', x_train.shape)
     print('x_val.shape: ', x_val.shape)

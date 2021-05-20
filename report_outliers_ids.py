@@ -74,9 +74,19 @@ if __name__ == '__main__':
 
     print('Ploting ...')
     for b in 'ugriz':
+        figure, axes = plt.subplots(1, 2)
+
         df_aux = df_outl_pband[b][[b, f"err_{b}", 'outlier']]
-        ax = df_aux[df_aux['outlier'] == False].plot.scatter(x=b, y=f"err_{b}", c='b')
-        df_aux[df_aux['outlier'] == True].plot.scatter(x=b, y=f"err_{b}", c='r', ax=ax)
+
+        df_aux[df_aux['outlier'] == False].plot.scatter(x=b, y=f"err_{b}", c='b', s=0.35, ax=axes[0])
+        df_aux[df_aux['outlier'] == False].plot.density(x=b, y=f"err_{b}", c='b', ax=axes[1])
+        #pd.plotting.scatter_matrix(df_aux[df_aux['outlier'] == False], alpha=0.2)
+
+        df_aux[df_aux['outlier'] == True].plot.scatter(x=b, y=f"err_{b}", c='r', s=0.35, ax=axes[0])
+        df_aux[df_aux['outlier'] == True].plot.density(x=b, y=f"err_{b}", c='r', ax=axes[1])
+        #pd.plotting.scatter_matrix(df_aux[df_aux['outlier'] == True], alpha=0.2, ax=ax)
+
+        #df_aux.plot.scatter(x=b, y=f"err_{b}", c='outlier', colormap='viridis')
         plt.show()
         plt.savefig(f"outliers_{b}_band.png")
     print('Done')
