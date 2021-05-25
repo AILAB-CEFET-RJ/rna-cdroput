@@ -299,7 +299,8 @@ class ErrorOnlyDropout(Layer):
             # -- mascarando os erros ---
             keep_probs = tf.math.subtract(ones, sfmax[0])
             rnd_unif = tf.random.uniform(shape=(dim, 5), dtype=tf.dtypes.float32)
-            mask = tf.math.greater(keep_probs, rnd_unif)
+            #mask = tf.math.greater(keep_probs, rnd_unif)
+            mask = tf.math.less_equal(keep_probs, rnd_unif)
             casted_mask = tf.cast(mask, dtype=tf.dtypes.float32)
 
             # -- preservando ugriz --
