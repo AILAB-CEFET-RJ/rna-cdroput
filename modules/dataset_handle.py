@@ -15,6 +15,9 @@ def cut_val_band(df, band, val):
   return df[df[band] <= val]
 
 def cut_flag(df, attr, value):
+  chunk_size = df[df[attr] == value].shape[0]
+  print(f"{chunk_size} values cut off.")
+
   return df[df[attr] != value]
 
 def cut_all_val_errs(df, dataset_name, val):

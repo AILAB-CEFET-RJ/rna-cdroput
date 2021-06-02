@@ -59,9 +59,9 @@ if __name__ == '__main__':
 
     df_outl_pband = {}
     for b in 'ugriz':
-        df_outl = df[['refid', b, f"err_{b}"]]
-        df_outl = pd.merge(df_outl, df_ref_id, on='refid')[['objid', b, f"err_{b}"]]
-        df_outl.insert(3, 'outlier', df_outl[['objid']].isin(outliers[b]))
+        df_outl = df[['refid', b, f"err_{b}", f"{b}ErrExp"]]
+        df_outl = pd.merge(df_outl, df_ref_id, on='refid')[['objid', b, f"err_{b}", f"{b}ErrExp"]]
+        df_outl.insert(4, 'outlier', df_outl[['objid']].isin(outliers[b]))
         df_outl_pband[b] = df_outl
         print(f"Band [{b}]:")
         total = df_outl.shape[0]
@@ -70,7 +70,8 @@ if __name__ == '__main__':
         print(f"\t outliers = [{oulrs}]:")
         print(f"\t outliers rate = {(oulrs/total) * 100:.2f}%")
         print('--------------------------')
-        df_outl.to_csv(f"outliers_{b}_band.csv")
+        #df_outl.to_csv(f"outliers_{b}_band.csv")
+        df_outl[df_outl['outlier'] == True].to_csv(f"outliers_{b}_band.csv", index=False)
 
     print('Ploting ...')
     for b in 'ugriz':

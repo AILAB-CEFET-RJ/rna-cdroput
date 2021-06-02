@@ -298,7 +298,8 @@ class ErrorOnlyDropout(Layer):
 
             # -- mascarando os erros ---
             keep_probs = tf.math.subtract(ones, sfmax[0])
-            rnd_unif = tf.random.uniform(shape=(dim, 5), dtype=tf.dtypes.float32)
+            #rnd_unif = tf.random.uniform(shape=(dim, 5), dtype=tf.dtypes.float32)
+            rnd_unif = tf.random.normal(shape=(dim, 5), dtype=tf.dtypes.float32)
             mask = tf.math.greater(keep_probs, rnd_unif)
             #mask = tf.math.less_equal(keep_probs, rnd_unif)
             casted_mask = tf.cast(mask, dtype=tf.dtypes.float32)
@@ -323,7 +324,15 @@ class ErrorOnlyDropout(Layer):
             ids10= tf.repeat(tf.reshape(ids, [dim, 1]), 10, axis=1)
             id_masks = tf.where(casted_mask == 0, ids10, 0)
 
-            return masked_input, id_masks
+            # print changed
+            #changed_val = tf.add(tf.add(
+            #    tf.strings.as_string(masked_input_err),
+            #    ' -> '),
+            #    tf.strings.as_string(masked_err_exp),
+            #)
+            #changed_val_log = tf.where(casted_mask == 0, changed_val, 'NA')
+
+            return masked_input, id_masks#, changed_val_log
 
         if training:
             output, _ = droppedout_errs(ugriz_n_errors, errs)
@@ -331,10 +340,16 @@ class ErrorOnlyDropout(Layer):
             if inputs.shape[1] == 16 :
                 tf.print('[Prediction Outliers]', output_stream='file://pred_id.log')
                 output, id_masks = droppedout_errs(ugriz_n_errors, errs)
+
                 tf.print(tf.strings.format("id: {}", (id_masks), summarize=-1),
                          summarize=-1,
                          output_stream='file://pred_id.log'
                 )
+
+                #tf.print(tf.strings.format("changes: {}", (change_log), summarize=-1),
+                #         summarize=-1,
+                #         output_stream='file://changes.log'
+                #)
 
             else:
                 output, _ = droppedout_errs(ugriz_n_errors, errs)
