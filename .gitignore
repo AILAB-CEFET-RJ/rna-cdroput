@@ -105,6 +105,8 @@ celerybeat.pid
 *.csv
 *_train_data
 *_val_data_*
+happy*
+teddy*
 
 # Environments
 .env
