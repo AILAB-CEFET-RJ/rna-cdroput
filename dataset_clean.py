@@ -20,7 +20,7 @@ def filter_negative_data(dataframe):
         dataframe = dataframe[dataframe[f"{b}"] > 0]
 
     clean_size = dataframe.shape[0]
-    print(f"Negative data removed: {orig_size - clean_size}.")
+    print(f"Negative data removed: {orig_size - clean_size} of {orig_size}.")
 
     return dataframe
 
@@ -29,10 +29,10 @@ def cut_all_val_errs(df, val):
     orig_size = df.shape[0]
 
     for b in 'ugriz':
-        df = df[df[f"{b}"] <= val]
+        df = df[df[f"err_{b}"] <= val]
 
     clean_size = df.shape[0]
-    print(f"Errors values cut off: {orig_size - clean_size}.")
+    print(f"Errors values cut off: {orig_size - clean_size} of {orig_size}.")
 
     return df
 
@@ -43,7 +43,7 @@ def cut_val_band(df, band, val):
     df = df[df[band] <= val]
 
     clean_size = df.shape[0]
-    print(f"Attr in {band} band cut: {orig_size - clean_size}.")
+    print(f"Attr in {band} band cut: {orig_size - clean_size} of {orig_size}.")
 
     return df
 
@@ -54,7 +54,7 @@ def cut_flag(df, attr, value):
     df = df[df[attr] != value]
 
     clean_size = df.shape[0]
-    print(f"Flag values cut off: {orig_size - clean_size}.")
+    print(f"Flag values cut off: {orig_size - clean_size} of {orig_size}.")
 
     return df
 
@@ -77,7 +77,8 @@ def clean_data(dataset_name, rm_negatives, cut_u_25, cut_1_errs, cut_clean_flag)
         data = cut_flag(data, 'clean', 0)
 
     data_clean_size = data.shape[0]
-    print(f"Total data removed: {data_orig_size - data_clean_size}.")
+    print(f"Total data removed: {data_orig_size - data_clean_size} of {data_orig_size}.")
+    print(f"Total data remains: {data_clean_size} of {data_orig_size}.")
 
     name, ext = dataset_name.split('.')
     data.to_csv(f"{name}_clean.{ext}", index=False)
