@@ -26,6 +26,7 @@ def download_teddy():
         if data_chunk == 'A':
             data.to_csv('teddy_data.csv', index=False)
         else:
+            data.drop(columns=['redshift', 'err_redshift'], axis=1, inplace=True)
             data.to_csv(f"teddy_test_data_{data_chunk}.csv", index=False)
 
         os.system(f"rm teddyT_{data_chunk}.cat")
@@ -46,6 +47,7 @@ def download_happy():
         if data_chunk == 'A':
             data.to_csv('happy_data.csv', index=False)
         else:
+            data.drop(columns=['redshift', 'err_redshift'], axis=1, inplace=True)
             data.to_csv(f"happy_test_data_{data_chunk}.csv", index=False)
 
         os.system(f"rm happyT_{data_chunk}")
