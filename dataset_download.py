@@ -24,9 +24,9 @@ def download_teddy():
                            ])
 
         if data_chunk == 'A':
-            data.to_csv('teddy_train_data.csv', index=False)
+            data.to_csv('teddy_data.csv', index=False)
         else:
-            data.to_csv(f"teddy_val_data_{data_chunk}.csv", index=False)
+            data.to_csv(f"teddy_test_data_{data_chunk}.csv", index=False)
 
         os.system(f"rm teddyT_{data_chunk}.cat")
 
@@ -44,16 +44,16 @@ def download_happy():
                            ])
 
         if data_chunk == 'A':
-            data.to_csv('happy_train_data.csv', index=False)
+            data.to_csv('happy_data.csv', index=False)
         else:
-            data.to_csv(f"happy_val_data_{data_chunk}.csv", index=False)
+            data.to_csv(f"happy_test_data_{data_chunk}.csv", index=False)
 
         os.system(f"rm happyT_{data_chunk}")
 
 
 def download_sdss():
     url = f"https://zenodo.org/record/4752020/files/sdss_train_data.csv?download=1"
-    output = 'sdss_train_data.csv'
+    output = 'sdss_data.csv'
     gdown.download(url, output, quiet=False)
 
 
