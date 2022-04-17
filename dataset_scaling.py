@@ -7,7 +7,7 @@ from sklearn.preprocessing import MinMaxScaler
 
 def parser():
     parse = argparse.ArgumentParser(description='ANN Experiments. Script for dataset scaling.')
-    parse.add_argument('-scaler', metavar='PROPORTION', help='Scaler classname to use.')
+    parse.add_argument('-scaler', metavar='SCALER', help='Scaler classname to use.')
     parse.add_argument('-datafiles', nargs='+', metavar='DATAFILES', help='Train dataset file must be the first. Fit and transform the first, and only transform the others.')
 
     return parse
