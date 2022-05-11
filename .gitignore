@@ -137,3 +137,6 @@ dmypy.json
 
 # idea
 .idea/
+
+hist_*
+*.hdf5
