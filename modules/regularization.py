@@ -6,6 +6,51 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import MinMaxScaler
 
 
+class ErrorBasedInvertedDropoutV2(Layer):
+    def __init__(self, **kwargs):
+        super(ErrorBasedInvertedDropoutV2, self).__init__(**kwargs)
+        print('ErrorBasedInvertedDropoutV2')
+
+    def call(self, inputs, training=None):
+        #input is Tensor
+        print(inputs)
+        n_bands = 5
+
+        feats = inputs[:, :2 * n_bands]
+        errs = inputs[:, n_bands:2 * n_bands]
+        exp_errs = inputs[:, 2 * n_bands:]
+
+        SBANDS = 10
+
+        def droppedout_ugriz(feats, errs, exp_errs):
+            ones = tf.ones(shape=(1, SBANDS), dtype=tf.dtypes.float32)
+            sfmax = tf.nn.softmax(tf.math.divide(tf.math.subtract(errs, exp_errs), errs))
+            sfmax = tf.concat([sfmax, sfmax], axis=1)
+
+            keep_probs = tf.math.subtract(ones, sfmax[0])
+            rnd_unif = tf.random.uniform(shape=(1, SBANDS), dtype=tf.dtypes.float32)
+            mask = tf.math.greater(keep_probs, rnd_unif)
+            casted_mask = tf.cast(mask, dtype=tf.dtypes.float32)
+
+            masked_input = tf.math.multiply(feats, casted_mask)
+            keep_probs_mean = tf.math.reduce_mean(keep_probs)
+            masked_input = tf.math.divide(masked_input, keep_probs_mean)
+
+            return masked_input
+
+        if training:
+            output = droppedout_ugriz(feats, errs, exp_errs)
+        else:
+            output = feats
+
+        return output
+
+
+###############################
+#######    OLD STUFF   ########
+###############################
+
+
 def select_dropout(dropout_opt, include_errors):
     print(f"Selected Dropout: {dropout_opt}")
     if dropout_opt == 'none' or dropout_opt is None:
@@ -22,7 +67,6 @@ def select_dropout(dropout_opt, include_errors):
         return EBasedInvDynamicDp(include_errors)
     if dropout_opt == 'ErrorOnlyDropout':
         return ErrorOnlyDropout()
-
 
 
 def select_scaler(scaler_opt):
@@ -80,6 +124,7 @@ class ErrorBasedDropoutIR(Layer):
               output = ugriz_n_errors
 
         return output
+
 
 class ErrorBasedDropoutDT(ErrorBasedDropoutIR):
     def __init__(self, include_errors, **kwargs):

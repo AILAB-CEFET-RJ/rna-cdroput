@@ -18,7 +18,7 @@ def apply_method(df):
     #TODO
     # 1. implement method call here
     # 2. insert expected errors after idx position with column name like 'err_<band>_exp.
-    #       See 'dataset_isotonic_regression.py'
+    #       See 'isotonic_regression.py'
     # 3. replace all '??' by implemented method name
 
     return df_exp_err

@@ -14,6 +14,8 @@ from tensorflow.keras.callbacks import ModelCheckpoint
 
 from numpy.random import seed
 
+from modules.regularization import ErrorBasedInvertedDropoutV2
+
 
 def parser():
     parse = argparse.ArgumentParser(description='ANN Experiments')
@@ -26,6 +28,7 @@ def parser():
     parse.add_argument('-valset', metavar='VALSET', help='Validation dataset file.')
     parse.add_argument('-noes', action='store_true', help='Disable early stop.')
     parse.add_argument('-gpu', metavar='DEVICE', help='GPU device name. Default is device name position 0.')
+    parse.add_argument('-feature', metavar='FEAT', help='Feature options: [B | A]. B for bands. A for bands and errors. Default is A.')
     parse.add_argument('-bs', metavar='BATCH', type=int, default=0, help='Batch size.')
     parse.add_argument('-layers', metavar='LAYERS', help='Force amount of units in each hidden layer. '
                                                          'Use "20:10" value for 2 hidden layers with 20 neurons in first and 10 in seccond. The Default is 2 hidden layers'
@@ -35,18 +38,20 @@ def parser():
 
 
 def select_dropout(dropout_opt):
+    if dropout_opt:
+        return ErrorBasedInvertedDropoutV2()
     return None
 
 
 def callbacks(no_early_stopping, epochs, modelname, run):
-    model_dir = '.'
-    model_filename = f"model_{modelname}_epochs_{epochs}_run_{run}" + '_mse_{mse:.6f}_from_epoch_{epoch}.hdf5'
+    model_dir = f"./output/models/epochs_{epochs}/run_{run}/"
+    model_filename = f"model_{modelname}" + '_mse_{mse:.6f}_from_epoch_{epoch}.hdf5'
     patience = int(0.2 * epochs)
-    best_weights_filepath = os.path.join(model_dir, model_filename)
+    weights_filepath = os.path.join(model_dir, model_filename)
     early_stopping = EarlyStopping(monitor='val_loss', mode='min', patience=patience)
 
     mcp_save = ModelCheckpoint(
-        monitor='val_loss', mode='min', filepath=best_weights_filepath, save_best_only=True
+        monitor='val_loss', mode='min', filepath=weights_filepath, save_best_only=True
     )
 
     if no_early_stopping:
@@ -80,8 +85,12 @@ def neural_network(dropout, p_layers, learning_rate, n_features, bias_output_lay
 
 
 def serialize(hist, modelname, epochs, run):
-    dump_file = f"hist_{modelname}_epochs_{epochs}_run_{run}"
-    pd.DataFrame.from_dict(hist.history).to_csv(dump_file, index=False)
+    dump_dir = f"./output/hists/epochs_{epochs}/"
+    if not os.path.exists(dump_dir):
+        os.makedirs(dump_dir)
+    dump_file = f"hist_{modelname}_run_{run}"
+    filepath = os.path.join(dump_dir, dump_file)
+    pd.DataFrame.from_dict(hist.history).to_csv(filepath, index=False)
     print(f"Hist[{dump_file}] dumped!")
 
 
@@ -100,8 +109,19 @@ if __name__ == '__main__':
     parser = parser()
     args = parser.parse_args()
 
-    features = 'u,g,r,i,z'.split(',')
+    ugriz = list('ugriz')
+    errors = list(map(lambda b: f"err_{b}", ugriz))
+    exp_errors = list(map(lambda eb: f"{eb}_exp", errors))
     target = ['redshift']
+
+    features = ugriz+errors
+
+    dropout = select_dropout(args.dp)
+    print(f"Selected Dropout: {args.dp}")
+
+    if dropout:
+        features = features + exp_errors
+
     f = len(features)
 
     train_df = pd.read_csv(args.trainset, comment='#')
@@ -135,9 +155,6 @@ if __name__ == '__main__':
     seed(42)
     tf.random.set_seed(42)
 
-    dropout = select_dropout(args.dp)
-    print(f"Selected Dropout: {args.dp}")
-
     with tf.device(device_name):
         times = np.array([])
 
@@ -145,7 +162,7 @@ if __name__ == '__main__':
             print(f"*** Run {i} ***")
             start = time.perf_counter()
             model = neural_network(dropout, args.layers, args.lr, f, y_train.mean().to_numpy())
-            model.summary()
+            #model.summary()
             hist = model.fit(x_train, y_train,
                              validation_data=(x_val, y_val),
                              epochs=args.e,
