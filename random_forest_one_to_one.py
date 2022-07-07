@@ -43,7 +43,7 @@ def add_expected_errors_data(dataset_name):
 
     data = apply_random_forest(data)
 
-    data.to_csv(f"{name}_dt_experrs.{ext}", index=False)
+    data.to_csv(f"{name}_rf_experrs.{ext}", index=False)
 
 
 if __name__ == '__main__':
