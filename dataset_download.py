@@ -12,8 +12,8 @@ def parser():
 
 
 def download_teddy():
-    for data_chunk in 'A':
-        #os.system(f"wget https://raw.githubusercontent.com/COINtoolbox/photoz_catalogues/master/Teddy/forTemplateBased/teddyT_{data_chunk}.cat")
+    for data_chunk in 'ABCD':
+        os.system(f"wget https://raw.githubusercontent.com/COINtoolbox/photoz_catalogues/master/Teddy/forTemplateBased/teddyT_{data_chunk}.cat")
 
         data = pd.read_csv(f"teddyT_{data_chunk}.cat", comment='#',
                            delim_whitespace=True,
@@ -29,12 +29,12 @@ def download_teddy():
             data.drop(columns=['redshift', 'err_redshift'], axis=1, inplace=True)
             data.to_csv(f"teddy_test_data_{data_chunk}.csv", index=False)
 
-        #os.system(f"rm teddyT_{data_chunk}.cat")
+        os.system(f"rm teddyT_{data_chunk}.cat")
 
 
 def download_happy():
-    for data_chunk in 'A':
-        #os.system(f"wget https://raw.githubusercontent.com/COINtoolbox/photoz_catalogues/master/Happy/forTemplateBased/happyT_{data_chunk}")
+    for data_chunk in 'ABCD':
+        os.system(f"wget https://raw.githubusercontent.com/COINtoolbox/photoz_catalogues/master/Happy/forTemplateBased/happyT_{data_chunk}")
 
         data = pd.read_csv(f"happyT_{data_chunk}", comment='#',
                            delim_whitespace=True,
@@ -50,7 +50,7 @@ def download_happy():
             data.drop(columns=['redshift', 'err_redshift'], axis=1, inplace=True)
             data.to_csv(f"happy_test_data_{data_chunk}.csv", index=False)
 
-        #os.system(f"rm happyT_{data_chunk}")
+        os.system(f"rm happyT_{data_chunk}")
 
 
 def download_sdss():
