@@ -1,7 +1,7 @@
 import argparse
 import pandas as pd
 
-from xgboost import XGBRegressor
+from sklearn.tree import DecisionTreeRegressor
 
 def parser():
     parse = argparse.ArgumentParser(description='ANN Experiments. Script to add expected errors computed by decision tree in the dataset.')
@@ -11,25 +11,27 @@ def parser():
     return parse
 
 
-def apply_xgb_for_band(df, mag_col, err_col):
-    X = df[[mag_col]]
+def apply_dt_for_band(df, bands, err_col):
+    X = df[bands]
     y = df[[err_col]]
-    regressor = XGBRegressor(max_depth=5, objective='reg:squarederror')
-    y_expected = regressor.fit(X, y)
+    dt = DecisionTreeRegressor(random_state=0, max_depth=5)
+    y_expected = dt.fit(X, y)
 
-    return regressor, X, y, y_expected
+    return dt, X, y, y_expected
 
 
-def apply_xgb(df):
-    print('# process_xgb in dataframe')
+def apply_dt(df):
+    print('# process_dt in dataframe')
     df_err = df.copy(deep=True)
 
     idx = df_err.columns.get_loc('err_z') + 1
 
-    for b in 'ugriz':
+    bands = [letter for letter in 'ugriz']
+
+    for b in bands:
         eb = f"err_{b}"
-        dt, _, _, _ = apply_xgb_for_band(df.copy(), b, eb)
-        pred = dt.predict(df_err[[b]])
+        dt, _, _, _ = apply_dt_for_band(df.copy(), bands, eb)
+        pred = dt.predict(df_err[bands])
         df_err.insert(idx, f"err_{b}_exp", pred, allow_duplicates=True)
         idx = idx + 1
 
@@ -40,9 +42,9 @@ def add_expected_errors_data(dataset_name):
     data = pd.read_csv(dataset_name, comment='#')
     name, ext = dataset_name.split('.')
 
-    data = apply_xgb(data)
+    data = apply_dt(data)
 
-    data.to_csv(f"{name}_xgb_experrs.{ext}", index=False)
+    data.to_csv(f"{name}_dt_experrs.{ext}", index=False)
 
 
 if __name__ == '__main__':
