@@ -36,10 +36,14 @@ def calculate_multiple_regression_results(
         "mean_squared_error",
         "r2_score",
     ])
-    
-    regression_results_df["target_names"] = true_target_names
 
-    print(regression_results_df)
+    regression_results_df.loc[len(regression_results_df.index)] = regression_results_df.mean()
+    
+    regression_results_df["target_name"] = [*true_target_names, "mean"]
+
+    regression_results_df["dataset"] = dataset_name
+
+    return regression_results_df
 
 def main():
     root_files = [f"./{filename}" for filename in os.listdir(f"./")]
@@ -47,16 +51,24 @@ def main():
     strategy_files = list(filter(lambda filename: filename.find("experrs") > 0, root_files))
 
     true_target_names = ['u', 'g', 'r', 'i', 'z']
+
     pred_target_names = [f"err_{letter}" for letter in true_target_names]
 
+    regression_results_df_list = []
+
     for strategy_file in strategy_files:
-        calculate_multiple_regression_results(
+        regression_results_df = calculate_multiple_regression_results(
             dataset_name=strategy_file,
             dataframe=pd.read_csv(strategy_file),
             true_target_names=true_target_names,
             pred_target_names=pred_target_names,
         )
 
+        regression_results_df_list.append(regression_results_df)
+
+    regression_results_merged_dfs = pd.concat(regression_results_df_list)
+
+    print(regression_results_merged_dfs.head(6))
 
 
 if __name__ == '__main__':
