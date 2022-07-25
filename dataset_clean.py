@@ -1,14 +1,15 @@
 import argparse
+from unittest.mock import DEFAULT
 import pandas as pd
 
 
 def parser():
     parse = argparse.ArgumentParser(description='ANN Experiments. Script for dataset cleaning.')
     parse.add_argument('-dataset', metavar='DS', help='Dataset file to use.')
-    parse.add_argument('-rn', action='store_true', help='Remove negative entries.')
-    parse.add_argument('-u25', action='store_true', help='Cut >= 25 in u band.')
-    parse.add_argument('-e1', action='store_true', help='Cut >= 1.0 in all band errors.')
-    parse.add_argument('-rf', action='store_true', help='Cut clean flag data = 0.')
+    parse.add_argument('-rn', action='store_true', default=True, help='Remove negative entries.')
+    parse.add_argument('-u25', action='store_true', default=True, help='Cut >= 25 in u band.')
+    parse.add_argument('-e1', action='store_true', default=True, help='Cut >= 1.0 in all band errors.')
+    parse.add_argument('-rf', action='store_true', default=True, help='Cut clean flag data = 0.')
 
     return parse
 
