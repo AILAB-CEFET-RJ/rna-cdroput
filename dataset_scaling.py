@@ -1,4 +1,5 @@
 import argparse
+import joblib
 import pandas as pd
 
 from sklearn.preprocessing import StandardScaler
@@ -31,6 +32,9 @@ def scale_data(datafile_names, scaler_opt):
 
             name, ext = df_name.split('.')
             test_data.to_csv(f"{name}_scaled.{ext}", index=False)
+
+    scaler_filename = "scaler.save"
+    joblib.dump(scaler, scaler_filename)
 
 
 def scaler_of(scaler_opt):
