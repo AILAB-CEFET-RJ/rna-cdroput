@@ -13,7 +13,7 @@ def parser():
 
 
 def split_data(dataset_name, proportion):
-    data = pd.read_csv(dataset_name, comment='#')
+    data = pd.read_csv(f"./src/data/{dataset_name}", comment='#')
     name, ext = dataset_name.split('.')
 
     props = proportion.split(':')
@@ -24,8 +24,8 @@ def split_data(dataset_name, proportion):
         s = int(props[1]) / 100
         train_data, val_data = train_test_split(data, test_size=s, random_state=42)
 
-        train_data.to_csv(f"{name}_train.{ext}", index=False)
-        val_data.to_csv(f"{name}_val.{ext}", index=False)
+        train_data.to_csv(f"./src/data/{name}_train.{ext}", index=False)
+        val_data.to_csv(f"./src/data/{name}_val.{ext}", index=False)
 
         train_size = train_data.shape[0]
         val_size = val_data.shape[0]
@@ -41,9 +41,9 @@ def split_data(dataset_name, proportion):
         train_data, test_data = train_test_split(data, test_size=s, random_state=42)
         test_data, val_data = train_test_split(test_data, test_size=s2, random_state=42)
 
-        train_data.to_csv(f"{name}_train.{ext}", index=False)
-        test_data.to_csv(f"{name}_test.{ext}", index=False)
-        val_data.to_csv(f"{name}_val.{ext}", index=False)
+        train_data.to_csv(f"./src/data/{name}_train.{ext}", index=False)
+        test_data.to_csv(f"./src/data/{name}_test.{ext}", index=False)
+        val_data.to_csv(f"./src/data/{name}_val.{ext}", index=False)
 
         train_size = train_data.shape[0]
         test_size = test_data.shape[0]

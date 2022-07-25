@@ -14,7 +14,7 @@ from tensorflow.keras.callbacks import ModelCheckpoint
 
 from numpy.random import seed
 
-from modules.regularization import ErrorBasedInvertedDropoutV2
+from src.modules.regularization import ErrorBasedInvertedDropoutV2
 
 
 def parser():
@@ -124,9 +124,9 @@ if __name__ == '__main__':
 
     f = len(features)
 
-    train_df = pd.read_csv(args.trainset, comment='#')
+    train_df = pd.read_csv(f"./src/data/{args.trainset}", comment='#')
     print(f"Train set loaded! Shape = {train_df.shape}")
-    val_df = pd.read_csv(args.valset, comment='#')
+    val_df = pd.read_csv(f"./src/data/{args.valset}", comment='#')
     print(f"Validation set loaded! Shape = {val_df.shape}")
 
     x_train = train_df[features]

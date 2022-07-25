@@ -38,7 +38,7 @@ def calculate_multiple_regression_results(
     ])
 
     regression_results_df.loc[len(regression_results_df.index)] = regression_results_df.mean()
-    
+
     regression_results_df["target_name"] = [*true_target_names, "mean"]
 
     regression_results_df["dataset"] = dataset_name
