@@ -1,9 +1,8 @@
 import argparse
+import os
+import gdown
 import pandas as pd
 
-from urllib import request
-
-from src.modules import utils
 
 def parser():
     parse = argparse.ArgumentParser(description='ANN Experiments. Script for dataset downloads. Formats all data to csv.')
@@ -11,15 +10,12 @@ def parser():
 
     return parse
 
+
 def download_teddy():
     for data_chunk in 'ABCD':
-        dataset_download_url = f"https://raw.githubusercontent.com/COINtoolbox/photoz_catalogues/master/Teddy/forTemplateBased/teddyT_{data_chunk}.cat"
+        os.system(f"wget https://raw.githubusercontent.com/COINtoolbox/photoz_catalogues/master/Teddy/forTemplateBased/teddyT_{data_chunk}.cat")
 
-        dataset_download_path = f"./src/data/teddyT_{data_chunk}.cat"
-
-        request.urlretrieve(dataset_download_url, dataset_download_path)
-
-        data = pd.read_csv(f"./src/data/teddyT_{data_chunk}.cat", comment='#',
+        data = pd.read_csv(f"teddyT_{data_chunk}.cat", comment='#',
                            delim_whitespace=True,
                            names=[
                                'objid', 'u', 'g', 'r', 'i', 'z',
@@ -28,21 +24,19 @@ def download_teddy():
                            ])
 
         if data_chunk == 'A':
-            data.to_csv('./src/data/teddy_data.csv', index=False)
+            data.to_csv('teddy_data.csv', index=False)
         else:
             data.drop(columns=['redshift', 'err_redshift'], axis=1, inplace=True)
-            data.to_csv(f"./src/data/teddy_test_data_{data_chunk}.csv", index=False)
+            data.to_csv(f"teddy_test_data_{data_chunk}.csv", index=False)
+
+        os.system(f"rm teddyT_{data_chunk}.cat")
 
 
 def download_happy():
     for data_chunk in 'ABCD':
-        dataset_download_url = f"https://raw.githubusercontent.com/COINtoolbox/photoz_catalogues/master/Happy/forTemplateBased/happyT_{data_chunk}"
+        os.system(f"wget https://raw.githubusercontent.com/COINtoolbox/photoz_catalogues/master/Happy/forTemplateBased/happyT_{data_chunk}")
 
-        dataset_download_path = f"./src/data/happyT_{data_chunk}.cat"
-
-        request.urlretrieve(dataset_download_url, dataset_download_path)
-
-        data = pd.read_csv(f"./src/data/happyT_{data_chunk}.cat", comment='#',
+        data = pd.read_csv(f"happyT_{data_chunk}", comment='#',
                            delim_whitespace=True,
                            names=[
                                'objid', 'u', 'g', 'r', 'i', 'z',
@@ -51,17 +45,19 @@ def download_happy():
                            ])
 
         if data_chunk == 'A':
-            data.to_csv('./src/data/happy_data.csv', index=False)
+            data.to_csv('happy_data.csv', index=False)
         else:
             data.drop(columns=['redshift', 'err_redshift'], axis=1, inplace=True)
-            data.to_csv(f"./src/data/happy_test_data_{data_chunk}.csv", index=False)
+            data.to_csv(f"happy_test_data_{data_chunk}.csv", index=False)
+
+        os.system(f"rm happyT_{data_chunk}")
+
 
 def download_sdss():
-    dataset_download_url = f"https://zenodo.org/record/4752020/files/sdss_train_data.csv?download=1"
+    url = f"https://zenodo.org/record/4752020/files/sdss_train_data.csv?download=1"
+    output = 'sdss_data.csv'
+    gdown.download(url, output, quiet=False)
 
-    dataset_download_path = './src/data/sdss_data.csv'
-
-    request.urlretrieve(dataset_download_url, dataset_download_path)
 
 def download_data(dataset_name):
     if dataset_name == 'teddy':
@@ -85,5 +81,4 @@ if __name__ == '__main__':
 
     dataset_name = args.dataset
 
-    utils.rna_cdrpout_print(f"Stage 01: Downloading ({dataset_name})")
     download_data(dataset_name)
