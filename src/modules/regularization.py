@@ -1,5 +1,8 @@
 import random
 import tensorflow as tf
+
+from src.modules import utils
+
 from tensorflow.keras.layers import Layer
 
 from sklearn.preprocessing import StandardScaler
@@ -9,11 +12,11 @@ from sklearn.preprocessing import MinMaxScaler
 class ErrorBasedInvertedDropoutV2(Layer):
     def __init__(self, **kwargs):
         super(ErrorBasedInvertedDropoutV2, self).__init__(**kwargs)
-        print('ErrorBasedInvertedDropoutV2')
+        utils.rna_cdrpout_print('ErrorBasedInvertedDropoutV2')
 
     def call(self, inputs, training=None):
         #input is Tensor
-        print(inputs)
+        utils.rna_cdrpout_print(inputs)
         n_bands = 5
 
         feats = inputs[:, :2 * n_bands]
@@ -52,7 +55,7 @@ class ErrorBasedInvertedDropoutV2(Layer):
 
 
 def select_dropout(dropout_opt, include_errors):
-    print(f"Selected Dropout: {dropout_opt}")
+    utils.rna_cdrpout_print(f"Selected Dropout: {dropout_opt}")
     if dropout_opt == 'none' or dropout_opt is None:
         return None
     if dropout_opt == 'ErrorBasedDropoutIR':
@@ -70,7 +73,7 @@ def select_dropout(dropout_opt, include_errors):
 
 
 def select_scaler(scaler_opt):
-    print(f"Selected Scaler: {scaler_opt}")
+    utils.rna_cdrpout_print(f"Selected Scaler: {scaler_opt}")
     if scaler_opt == 'none' or scaler_opt is None:
         return None
     if scaler_opt == 'StandardScaler':
@@ -82,7 +85,7 @@ def select_scaler(scaler_opt):
 class ErrorBasedDropoutIR(Layer):
     def __init__(self, include_errors, **kwargs):
         super(ErrorBasedDropoutIR, self).__init__(**kwargs)
-        print('ErrorBasedDropoutIR')
+        utils.rna_cdrpout_print('ErrorBasedDropoutIR')
         self.include_errors = include_errors
 
     def get_config(self):
@@ -129,18 +132,18 @@ class ErrorBasedDropoutIR(Layer):
 class ErrorBasedDropoutDT(ErrorBasedDropoutIR):
     def __init__(self, include_errors, **kwargs):
         super(ErrorBasedDropoutDT, self).__init__(include_errors, **kwargs)
-        print('ErrorBasedDropoutDT')
+        utils.rna_cdrpout_print('ErrorBasedDropoutDT')
 
 
 class ErrorBasedInvertedDropout(Layer):
     #def __init__(self, **kwargs):
     #    super(ErrorBasedInvertedDropout, self).__init__(**kwargs)
-    #    print('ErrorBasedInvertedDropout')
+    #    utils.rna_cdrpout_print('ErrorBasedInvertedDropout')
     #    self.include_errors = False
 
     def __init__(self, include_errors, **kwargs):
         super(ErrorBasedInvertedDropout, self).__init__(**kwargs)
-        print('ErrorBasedInvertedDropout')
+        utils.rna_cdrpout_print('ErrorBasedInvertedDropout')
         self.include_errors = include_errors
 
     def get_config(self):
@@ -191,7 +194,7 @@ class ErrorBasedInvertedDropout(Layer):
 class ErrorBasedInvertedRandomDropout(Layer):
     def __init__(self, include_errors, **kwargs):
         super(ErrorBasedInvertedRandomDropout, self).__init__(**kwargs)
-        print('ErrorBasedInvertedRandomDropout')
+        utils.rna_cdrpout_print('ErrorBasedInvertedRandomDropout')
         self.include_errors = include_errors
 
     def get_config(self):
@@ -233,18 +236,18 @@ class ErrorBasedInvertedRandomDropout(Layer):
             even = n % 2 == 0  # checa se e par
 
             if even:
-                print('Using Custom Dropout')
+                utils.rna_cdrpout_print('Using Custom Dropout')
                 if self.include_errors:
                     output = droppedout_ugriz(ugriz_n_errors, errs)
                     if output != ugriz:
-                        print('#dropout_used')
+                        utils.rna_cdrpout_print('#dropout_used')
                 else:
                     output = droppedout_ugriz(ugriz, errs)
                     nonzero = tf.math.count_nonzero(output - ugriz)
                     tf.keras.backend.print_tensor(nonzero)
 
             else:
-                print('Dropout off')
+                utils.rna_cdrpout_print('Dropout off')
                 output = ugriz
                 if self.include_errors:
                     output = ugriz_n_errors
@@ -260,7 +263,7 @@ class ErrorBasedInvertedRandomDropout(Layer):
 class EBasedInvDynamicDp(Layer):
     def __init__(self, include_errors, **kwargs):
         super(EBasedInvDynamicDp, self).__init__(**kwargs)
-        print('EBasedInvDynamicDp')
+        utils.rna_cdrpout_print('EBasedInvDynamicDp')
         self.include_errors = include_errors
 
     def get_config(self):
@@ -326,7 +329,7 @@ class EBasedInvDynamicDp(Layer):
 class ErrorOnlyDropout(Layer):
     def __init__(self, **kwargs):
         super(ErrorOnlyDropout, self).__init__(**kwargs)
-        print('ErrorOnlyDropout')
+        utils.rna_cdrpout_print('ErrorOnlyDropout')
 
     def call(self, inputs, training=None):
         dim = tf.shape(inputs)[0]

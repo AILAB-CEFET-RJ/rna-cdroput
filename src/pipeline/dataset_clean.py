@@ -1,14 +1,15 @@
 import argparse
+from unittest.mock import DEFAULT
 import pandas as pd
 
 
 def parser():
     parse = argparse.ArgumentParser(description='ANN Experiments. Script for dataset cleaning.')
     parse.add_argument('-dataset', metavar='DS', help='Dataset file to use.')
-    parse.add_argument('-rn', action='store_true', help='Remove negative entries.')
-    parse.add_argument('-u25', action='store_true', help='Cut >= 25 in u band.')
-    parse.add_argument('-e1', action='store_true', help='Cut >= 1.0 in all band errors.')
-    parse.add_argument('-rf', action='store_true', help='Cut clean flag data = 0.')
+    parse.add_argument('-rn', action='store_true', default=True, help='Remove negative entries.')
+    parse.add_argument('-u25', action='store_true', default=True, help='Cut >= 25 in u band.')
+    parse.add_argument('-e1', action='store_true', default=True, help='Cut >= 1.0 in all band errors.')
+    parse.add_argument('-rf', action='store_true', default=True, help='Cut clean flag data = 0.')
 
     return parse
 
@@ -60,7 +61,7 @@ def cut_flag(df, attr, value):
 
 
 def clean_data(dataset_name, rm_negatives, cut_u_25, cut_1_errs, cut_clean_flag):
-    data = pd.read_csv(dataset_name, comment='#')
+    data = pd.read_csv(f"./src/data/{dataset_name}", comment='#')
 
     data_orig_size = data.shape[0]
 
@@ -81,7 +82,7 @@ def clean_data(dataset_name, rm_negatives, cut_u_25, cut_1_errs, cut_clean_flag)
     print(f"Total data remains: {data_clean_size} of {data_orig_size}.")
 
     name, ext = dataset_name.split('.')
-    data.to_csv(f"{name}_clean.{ext}", index=False)
+    data.to_csv(f"./src/data{name}_clean.{ext}", index=False)
 
 
 if __name__ == '__main__':

@@ -14,7 +14,9 @@ from tensorflow.keras.callbacks import ModelCheckpoint
 
 from numpy.random import seed
 
-from modules.regularization import ErrorBasedInvertedDropoutV2
+from src.modules import utils
+from src.modules.regularization import ErrorBasedInvertedDropoutV2
+
 
 
 def parser():
@@ -55,7 +57,7 @@ def callbacks(no_early_stopping, epochs, modelname, run):
     )
 
     if no_early_stopping:
-        print("early_stopping is disabled")
+        utils.rna_cdrpout_print("early_stopping is disabled")
         callbacks = [mcp_save]
     else:
         callbacks = [early_stopping, mcp_save]
@@ -91,16 +93,16 @@ def serialize(hist, modelname, epochs, run):
     dump_file = f"hist_{modelname}_run_{run}"
     filepath = os.path.join(dump_dir, dump_file)
     pd.DataFrame.from_dict(hist.history).to_csv(filepath, index=False)
-    print(f"Hist[{dump_file}] dumped!")
+    utils.rna_cdrpout_print(f"Hist[{dump_file}] dumped!")
 
 
 def print_times(times):
-    print('--------------- Timing ----------------')
+    utils.rna_cdrpout_print('--------------- Timing ----------------')
     mt = times.mean()
     stdt = times.std()
     tm = f"{mt}±{stdt}"
-    print(f"Done in {tm} sec.")
-    print(f"[CSV_t] {tm}")
+    utils.rna_cdrpout_print(f"Done in {tm} sec.")
+    utils.rna_cdrpout_print(f"[CSV_t] {tm}")
 
     return tm
 
@@ -108,6 +110,8 @@ def print_times(times):
 if __name__ == '__main__':
     parser = parser()
     args = parser.parse_args()
+
+    utils.rna_cdrpout_print("Stage 05: Training")
 
     ugriz = list('ugriz')
     errors = list(map(lambda b: f"err_{b}", ugriz))
@@ -117,17 +121,17 @@ if __name__ == '__main__':
     features = ugriz+errors
 
     dropout = select_dropout(args.dp)
-    print(f"Selected Dropout: {args.dp}")
+    utils.rna_cdrpout_print(f"Selected Dropout: {args.dp}")
 
     if dropout:
         features = features + exp_errors
 
     f = len(features)
 
-    train_df = pd.read_csv(args.trainset, comment='#')
-    print(f"Train set loaded! Shape = {train_df.shape}")
-    val_df = pd.read_csv(args.valset, comment='#')
-    print(f"Validation set loaded! Shape = {val_df.shape}")
+    train_df = pd.read_csv(f"./src/data/{args.trainset}", comment='#')
+    utils.rna_cdrpout_print(f"Train set loaded! Shape = {train_df.shape}")
+    val_df = pd.read_csv(f"./src/data/{args.valset}", comment='#')
+    utils.rna_cdrpout_print(f"Validation set loaded! Shape = {val_df.shape}")
 
     x_train = train_df[features]
     y_train = train_df[target]
@@ -140,17 +144,17 @@ if __name__ == '__main__':
         l1 = round(math.sqrt((m + 2) * N) + 2 * math.sqrt(N / (m + 2)))
         l2 = round(m * math.sqrt(N / (m + 2)))
         args.layers = f"{l1}:{l2}"
-        print(f"Using layers= {args.layers}")
+        utils.rna_cdrpout_print(f"Using layers= {args.layers}")
 
     device_name = tf.test.gpu_device_name()
     if args.gpu:
         device_name = args.gpu
-    print(f"Device Name to use: '{device_name}'")
+    utils.rna_cdrpout_print(f"Device Name to use: '{device_name}'")
 
     batch_size = 32
     if args.bs:
         batch_size = args.bs
-    print(f"Using batch size: {batch_size}")
+    utils.rna_cdrpout_print(f"Using batch size: {batch_size}")
 
     seed(42)
     tf.random.set_seed(42)
@@ -159,7 +163,7 @@ if __name__ == '__main__':
         times = np.array([])
 
         for i in range(args.runs):
-            print(f"*** Run {i} ***")
+            utils.rna_cdrpout_print(f"*** Run {i} ***")
             start = time.perf_counter()
             model = neural_network(dropout, args.layers, args.lr, f, y_train.mean().to_numpy())
             #model.summary()
