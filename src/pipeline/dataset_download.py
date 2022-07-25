@@ -3,6 +3,8 @@ import pandas as pd
 
 from urllib import request
 
+from src.modules import utils
+
 def parser():
     parse = argparse.ArgumentParser(description='ANN Experiments. Script for dataset downloads. Formats all data to csv.')
     parse.add_argument('-dataset', metavar='DS', help='Dataset to download [teddy|happy|sdss|all].')
@@ -34,13 +36,13 @@ def download_teddy():
 
 def download_happy():
     for data_chunk in 'ABCD':
-        dataset_download_url = "https://raw.githubusercontent.com/COINtoolbox/photoz_catalogues/master/Happy/forTemplateBased/happyT_{data_chunk}"
+        dataset_download_url = f"https://raw.githubusercontent.com/COINtoolbox/photoz_catalogues/master/Happy/forTemplateBased/happyT_{data_chunk}"
 
         dataset_download_path = f"./src/data/happyT_{data_chunk}.cat"
 
         request.urlretrieve(dataset_download_url, dataset_download_path)
 
-        data = pd.read_csv(f"./src/data/happyT_{data_chunk}", comment='#',
+        data = pd.read_csv(f"./src/data/happyT_{data_chunk}.cat", comment='#',
                            delim_whitespace=True,
                            names=[
                                'objid', 'u', 'g', 'r', 'i', 'z',
@@ -83,4 +85,5 @@ if __name__ == '__main__':
 
     dataset_name = args.dataset
 
+    utils.rna_cdrpout_print(f"Stage 01: Downloading ({dataset_name})")
     download_data(dataset_name)

@@ -1,54 +1,63 @@
 import argparse
 import pandas as pd
 
+from src.modules import utils
+
 from sklearn.tree import DecisionTreeRegressor
+
+from sklearn.model_selection import GridSearchCV
 
 def parser():
     parse = argparse.ArgumentParser(description='ANN Experiments. Script to add expected errors computed by decision tree in the dataset.')
+
     parse.add_argument('-dataset', metavar='DS', help='Dataset file to use.')
-    #parse.add_argument('-objective', metavar='WE', help='choose weight')
 
     return parse
 
+def insert_expected_errors(dataset: pd.DataFrame):
+    dataset_err = dataset.copy(deep=True)
 
-def apply_dt_for_band(df, bands, err_col):
-    X = df[bands]
-    y = df[[err_col]]
-    dt = DecisionTreeRegressor(random_state=0, max_depth=5)
-    y_expected = dt.fit(X, y)
+    grid_search_cv = GridSearchCV(
+        estimator  = DecisionTreeRegressor(random_state = utils.RANDOM_STATE),
+        cv         = utils.CROSS_VALIDATION_FOLDS,
+        n_jobs     = utils.PARALLEL_JOBS,
+        param_grid = {
+            'max_depth'   : [5, 10, 15],
+        },
+    )
 
-    return dt, X, y, y_expected
+    models = utils.find_best_model_m_x_1(dataset, grid_search_cv, "dt")
 
+    features = dataset[utils.X_FEATURE_COLUMNS]
 
-def apply_dt(df):
-    print('# process_dt in dataframe')
-    df_err = df.copy(deep=True)
+    pred = [model.predict(features) for model in models]
 
-    idx = df_err.columns.get_loc('err_z') + 1
+    df_err = pd.DataFrame(pred).transpose()
 
-    bands = [letter for letter in 'ugriz']
+    df_err.columns = utils.X_FEATURE_COLUMNS
 
-    for b in bands:
-        eb = f"err_{b}"
-        dt, _, _, _ = apply_dt_for_band(df.copy(), bands, eb)
-        pred = dt.predict(df_err[bands])
-        df_err.insert(idx, f"err_{b}_exp", pred, allow_duplicates=True)
+    idx = dataset_err.columns.get_loc('err_z') + 1
+
+    for b in 'ugriz':
+        dataset_err.insert(idx, f"err_{b}_exp", df_err[b], allow_duplicates=True)
         idx = idx + 1
 
-    return df_err
+    return dataset_err
 
+def init_expected_errors(dataset_name):
+    dataset = pd.read_csv(f"./src/data/{dataset_name}", comment='#')
 
-def add_expected_errors_data(dataset_name):
-    data = pd.read_csv(dataset_name, comment='#')
     name, ext = dataset_name.split('.')
 
-    data = apply_dt(data)
+    dataset.Name = name
 
-    data.to_csv(f"{name}_dt_experrs.{ext}", index=False)
+    dataset_err = insert_expected_errors(dataset)
 
+    dataset_err.to_csv(f"./src/data/{name}_dt_m_x_1_experrs.{ext}", index=False)
 
 if __name__ == '__main__':
     parser = parser()
     args = parser.parse_args()
 
-    add_expected_errors_data(args.dataset)
+    utils.rna_cdrpout_print("Stage 02: Predicting errors with (dt_m_x_1)")
+    init_expected_errors(args.dataset)
