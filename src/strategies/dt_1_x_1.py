@@ -23,6 +23,8 @@ def insert_expected_errors(dataset: pd.DataFrame):
         n_jobs     = utils.PARALLEL_JOBS,
         param_grid = {
             'max_depth': [5, 10, 15],
+            'criterion': ['squared_error', 'friedman_mse', 'absolute_error', 'poisson'],
+            'splitter' : ['best', 'random'],
         },
     )
 

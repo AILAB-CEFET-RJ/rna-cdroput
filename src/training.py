@@ -31,7 +31,7 @@ def parser():
     parse.add_argument('-noes', action='store_true', help='Disable early stop.')
     parse.add_argument('-gpu', metavar='DEVICE', help='GPU device name. Default is device name position 0.')
     parse.add_argument('-feature', metavar='FEAT', help='Feature options: [B | A]. B for bands. A for bands and errors. Default is A.')
-    parse.add_argument('-bs', metavar='BATCH', type=int, default=0, help='Batch size.')
+    parse.add_argument('-bs', metavar='BATCH', type=int, default=32, help='Batch size.')
     parse.add_argument('-layers', metavar='LAYERS', help='Force amount of units in each hidden layer. '
                                                          'Use "20:10" value for 2 hidden layers with 20 neurons in first and 10 in seccond. The Default is 2 hidden layers'
                                                          ' and neurons are computed based on the size of the features.')
@@ -151,9 +151,7 @@ if __name__ == '__main__':
         device_name = args.gpu
     utils.rna_cdrpout_print(f"Device Name to use: '{device_name}'")
 
-    batch_size = 32
-    if args.bs:
-        batch_size = args.bs
+    batch_size = args.bs
     utils.rna_cdrpout_print(f"Using batch size: {batch_size}")
 
     seed(42)

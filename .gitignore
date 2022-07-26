@@ -141,3 +141,4 @@ dmypy.json
 hist_*
 *.hdf5
 output/
+.output/

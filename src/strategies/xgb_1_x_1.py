@@ -1,52 +1,62 @@
 import argparse
 import pandas as pd
 
+from src.modules import utils
+
 from xgboost import XGBRegressor
+
+from sklearn.model_selection import GridSearchCV
 
 def parser():
     parse = argparse.ArgumentParser(description='ANN Experiments. Script to add expected errors computed by decision tree in the dataset.')
+
     parse.add_argument('-dataset', metavar='DS', help='Dataset file to use.')
-    #parse.add_argument('-objective', metavar='WE', help='choose weight')
 
     return parse
 
+def insert_expected_errors(dataset: pd.DataFrame):
+    dataset_err = dataset.copy(deep=True)
 
-def apply_xgb_for_band(df, mag_col, err_col):
-    X = df[[mag_col]]
-    y = df[[err_col]]
-    regressor = XGBRegressor(max_depth=5, objective='reg:squarederror')
-    y_expected = regressor.fit(X, y)
+    grid_search_cv = GridSearchCV(
+        estimator  = XGBRegressor(),
+        cv         = utils.CROSS_VALIDATION_FOLDS,
+        n_jobs     = utils.PARALLEL_JOBS,
+        param_grid = {
+            'n_neighbors': [1, 5, 10],
+            'weights'    : ['uniform', 'distance'],
+        },
+    )
 
-    return regressor, X, y, y_expected
+    models = utils.find_best_model_1_x_1(dataset, grid_search_cv, "xgb")
 
+    pred = [model.predict(dataset[column].to_numpy().reshape(-1, 1)) for (model, column) in zip(models, utils.X_FEATURE_COLUMNS)]
 
-def apply_xgb(df):
-    print('# process_xgb in dataframe')
-    df_err = df.copy(deep=True)
+    df_err = pd.DataFrame(pred).transpose()
 
-    idx = df_err.columns.get_loc('err_z') + 1
+    df_err.columns = utils.X_FEATURE_COLUMNS
+
+    idx = dataset_err.columns.get_loc('err_z') + 1
 
     for b in 'ugriz':
-        eb = f"err_{b}"
-        dt, _, _, _ = apply_xgb_for_band(df.copy(), b, eb)
-        pred = dt.predict(df_err[[b]])
-        df_err.insert(idx, f"err_{b}_exp", pred, allow_duplicates=True)
+        dataset_err.insert(idx, f"err_{b}_exp", df_err[b], allow_duplicates=True)
         idx = idx + 1
 
-    return df_err
+    return dataset_err
 
+def init_expected_errors(dataset_name):
+    dataset = pd.read_csv(f"./src/data/{dataset_name}", comment='#')
 
-def add_expected_errors_data(dataset_name):
-    data = pd.read_csv(dataset_name, comment='#')
     name, ext = dataset_name.split('.')
 
-    data = apply_xgb(data)
+    dataset.Name = name
 
-    data.to_csv(f"{name}_xgb_experrs.{ext}", index=False)
+    dataset_err = insert_expected_errors(dataset)
 
+    dataset_err.to_csv(f"./src/data/{name}_xgb_1_x_1_experrs.{ext}", index=False)
 
 if __name__ == '__main__':
     parser = parser()
     args = parser.parse_args()
 
-    add_expected_errors_data(args.dataset)
+    utils.rna_cdrpout_print("Stage 02: Predicting errors with (xgb_1_x_1)")
+    init_expected_errors(args.dataset)
