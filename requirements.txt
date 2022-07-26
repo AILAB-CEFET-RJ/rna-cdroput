@@ -16,12 +16,14 @@ google-pasta==0.2.0
 grpcio==1.47.0
 h5py==3.7.0
 idna==3.3
+Jinja2==3.1.2
 joblib==1.1.0
 keras==2.9.0
 Keras-Preprocessing==1.1.2
 kiwisolver==1.4.3
 libclang==14.0.1
 Markdown==3.3.7
+MarkupSafe==2.1.1
 matplotlib==3.5.2
 numpy==1.23.1
 oauthlib==3.2.0
