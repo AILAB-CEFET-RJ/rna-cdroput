@@ -50,14 +50,14 @@ def split_data(dataset_name, proportion):
         test_size = test_data.shape[0]
         val_size = val_data.shape[0]
 
-        utils.rna_cdrpout_print(f"Train: {train_size} of {orig_size}")
-        utils.rna_cdrpout_print(f"Test: {test_size} of {orig_size}")
-        utils.rna_cdrpout_print(f"Val: {val_size} of {orig_size}")
+        utils.rna_cdropout_print(f"Train: {train_size} of {orig_size}")
+        utils.rna_cdropout_print(f"Test: {test_size} of {orig_size}")
+        utils.rna_cdropout_print(f"Val: {val_size} of {orig_size}")
 
 
 if __name__ == '__main__':
     parser = parser()
     args = parser.parse_args()
 
-    utils.rna_cdrpout_print(f"Stage 03: Splitting {args.dataset}")
+    utils.rna_cdropout_print(f"Stage 03: Splitting {args.dataset}")
     split_data(args.dataset, args.p)

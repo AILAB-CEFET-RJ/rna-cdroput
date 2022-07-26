@@ -118,5 +118,5 @@ def find_best_model_1_x_1(dataset: pd.DataFrame, grid_search_cv: GridSearchCV, r
 
     return best_models
 
-def rna_cdrpout_print(line: str):
+def rna_cdropout_print(line: str):
     print(f"RNA-CDROPOUT >> {line}")

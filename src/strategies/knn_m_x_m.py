@@ -62,5 +62,5 @@ if __name__ == '__main__':
     parser = parser()
     args = parser.parse_args()
 
-    utils.rna_cdrpout_print("Stage 02: Predicting errors with (knn_m_x_m)")
+    utils.rna_cdropout_print("Stage 02: Predicting errors with (knn_m_x_m)")
     init_expected_errors(args.dataset)

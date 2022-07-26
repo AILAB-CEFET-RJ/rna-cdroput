@@ -35,7 +35,7 @@ def custom_layer_register():
 def load_model(file):
     with tf.keras.utils.custom_object_scope(custom_layer_register()):
         m = tf.keras.models.load_model(file)
-        utils.rna_cdrpout_print(f">>>  {file} Loaded !")
+        utils.rna_cdropout_print(f">>>  {file} Loaded !")
 
         return m
 
@@ -54,14 +54,14 @@ def serialize_results(real, preds, mfile):
 
     df.to_csv(filepath, index=False)
 
-    utils.rna_cdrpout_print(f"Result[{dump_file}] dumped!")
+    utils.rna_cdropout_print(f"Result[{dump_file}] dumped!")
 
 
 def predict(model_file, testset, batch_size, dropout):
     model = load_model(model_file)
-    utils.rna_cdrpout_print(f"Using batch size: {batch_size}")
+    utils.rna_cdropout_print(f"Using batch size: {batch_size}")
     test_df = pd.read_csv(f"./src/data/{testset}", comment='#')
-    utils.rna_cdrpout_print(f"Train set loaded! Shape = {test_df.shape}")
+    utils.rna_cdropout_print(f"Train set loaded! Shape = {test_df.shape}")
 
     ugriz = list('ugriz')
     errors = list(map(lambda b: f"err_{b}", ugriz))

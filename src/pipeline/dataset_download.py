@@ -85,5 +85,5 @@ if __name__ == '__main__':
 
     dataset_name = args.dataset
 
-    utils.rna_cdrpout_print(f"Stage 01: Downloading ({dataset_name})")
+    utils.rna_cdropout_print(f"Stage 01: Downloading ({dataset_name})")
     download_data(dataset_name)

@@ -47,5 +47,5 @@ if __name__ == '__main__':
     parser = parser()
     args = parser.parse_args()
 
-    utils.rna_cdrpout_print(f"Stage 04: Scaling {len(args.datafiles)} datafiles")
+    utils.rna_cdropout_print(f"Stage 04: Scaling {len(args.datafiles)} datafiles")
     scale_data(args.datafiles, args.scaler)
