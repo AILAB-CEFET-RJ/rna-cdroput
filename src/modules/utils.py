@@ -1,4 +1,5 @@
 import os, time
+import re
 import pandas as pd
 
 from statistics import mean
@@ -20,7 +21,7 @@ CROSS_VALIDATION_FOLDS = 5
 PARALLEL_JOBS = USE_ALL_CPU_CORES
 
 # WRITE RESULT DATASET FUNCTION
-RESULTS_DATASET_PATH = f"./src/data/errors_results.csv"
+RESULTS_DATASET_PATH = f"./src/report/tables/errors_results.csv"
 
 def write_result_dataset(line):
     if os.path.isfile(RESULTS_DATASET_PATH):
@@ -55,6 +56,11 @@ def find_best_model_m_x_m(dataset: pd.DataFrame, grid_search_cv: GridSearchCV, r
 
     grid_search_cv.fit(X_train, y_train)
 
+    generate_grid_search_cv_results(
+        grid_search_cv.cv_results_,
+        f"{dataset}_{regressor}_m_x_m",
+    )
+
     best_model = grid_search_cv.best_estimator_
 
     mse = metrics.mean_squared_error(y_test, best_model.predict(X_test))
@@ -77,6 +83,11 @@ def find_best_model_m_x_1(dataset: pd.DataFrame, grid_search_cv: GridSearchCV, r
         y_test_1_target = y_test[target_column]
 
         grid_search_cv.fit(X_train, y_train_1_target)
+
+        generate_grid_search_cv_results(
+            grid_search_cv.cv_results_,
+            f"{dataset}_{regressor}_m_x_1_{Y_TARGET_COLUMNS}",
+        )
 
         best_model = grid_search_cv.best_estimator_
 
@@ -106,6 +117,11 @@ def find_best_model_1_x_1(dataset: pd.DataFrame, grid_search_cv: GridSearchCV, r
 
         grid_search_cv.fit(X_train_1_feature, y_train_1_target)
 
+        generate_grid_search_cv_results(
+            grid_search_cv.cv_results_,
+            f"{dataset}_{regressor}_1_x_1_{X_FEATURE_COLUMNS}_{Y_TARGET_COLUMNS}",
+        )
+
         best_model = grid_search_cv.best_estimator_
 
         best_models.append(best_model)
@@ -120,3 +136,14 @@ def find_best_model_1_x_1(dataset: pd.DataFrame, grid_search_cv: GridSearchCV, r
 
 def rna_cdropout_print(line: str):
     print(f"RNA-CDROPOUT >> {line}")
+
+def generate_grid_search_cv_results(results, filename: str):
+    filepath = f"./src/report/tables/{filename}"
+
+    results_df = pd.DataFrame(results)
+    results_df.to_csv(filepath + ".csv")
+    results_df.to_latex(
+        buf=filepath + ".tex",
+        label=filename,
+        caption=f"Hiperparâmetros: {filename}",
+    )
