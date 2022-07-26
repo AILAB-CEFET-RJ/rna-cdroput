@@ -1,10 +1,6 @@
-# THIS SCRIPTS TEST ALL STRATEGIES FOR TEDDY
-# DOWNLOAD.SH MUST BE EXECUTED FIRST!
-
-## RUN ALL STRATEGIES IN ALL DATASETS
 declare -a REGRESSORS=("dt" "knn" "mlp" "rf" "xgb")
 declare -a STRATEGIES=("1_x_1" "m_x_1" "m_x_m")
-declare -a DATASETS=("teddy" "happy" "sdss")
+declare -a DATASETS=("teddy" "happy")
 
 for dataset in "${DATASETS[@]}"
 do
@@ -26,10 +22,6 @@ do
         done
     done
 done
-
-### ISOTONIC REGRESSOR ###
-# ISOTONIC REGRESSOR DOES NOT SUPPORT MULTIPLE INPUT/OUTPUT!
-source ./src/scripts/strategies/ir_1_x_1.sh
 
 ### GENERATE ERROR RESULTS ###
 python -m src.report.error_results
