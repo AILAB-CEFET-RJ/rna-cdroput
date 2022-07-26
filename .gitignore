@@ -142,3 +142,4 @@ hist_*
 *.hdf5
 *.save
 output/
+.output/
