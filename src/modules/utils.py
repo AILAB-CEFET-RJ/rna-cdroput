@@ -58,7 +58,7 @@ def find_best_model_m_x_m(dataset: pd.DataFrame, grid_search_cv: GridSearchCV, r
 
     generate_grid_search_cv_results(
         grid_search_cv.cv_results_,
-        f"{dataset}_{regressor}_m_x_m",
+        f"{dataset.Name}_{regressor}_m_x_m",
     )
 
     best_model = grid_search_cv.best_estimator_
@@ -86,7 +86,7 @@ def find_best_model_m_x_1(dataset: pd.DataFrame, grid_search_cv: GridSearchCV, r
 
         generate_grid_search_cv_results(
             grid_search_cv.cv_results_,
-            f"{dataset}_{regressor}_m_x_1_{Y_TARGET_COLUMNS}",
+            f"{dataset.Name}_{regressor}_m_x_1_{Y_TARGET_COLUMNS}",
         )
 
         best_model = grid_search_cv.best_estimator_
@@ -119,7 +119,7 @@ def find_best_model_1_x_1(dataset: pd.DataFrame, grid_search_cv: GridSearchCV, r
 
         generate_grid_search_cv_results(
             grid_search_cv.cv_results_,
-            f"{dataset}_{regressor}_1_x_1_{X_FEATURE_COLUMNS}_{Y_TARGET_COLUMNS}",
+            f"{dataset.Name}_{regressor}_1_x_1_{X_FEATURE_COLUMNS}_{Y_TARGET_COLUMNS}",
         )
 
         best_model = grid_search_cv.best_estimator_
