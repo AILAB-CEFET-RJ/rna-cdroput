@@ -54,11 +54,15 @@ def split_dataset(dataset):
 def find_best_model_m_x_m(dataset: pd.DataFrame, grid_search_cv: GridSearchCV, regressor: str):
     X_train, X_test, y_train, y_test = split_dataset(dataset)
 
+    model_name = f"{dataset.Name}_{regressor}_m_x_m"
+
+    rna_cdropout_print(f"Processing {model_name}...")
+
     grid_search_cv.fit(X_train, y_train)
 
     generate_grid_search_cv_results(
         grid_search_cv.cv_results_,
-        f"{dataset.Name}_{regressor}_m_x_m",
+        model_name,
     )
 
     best_model = grid_search_cv.best_estimator_
@@ -79,6 +83,10 @@ def find_best_model_m_x_1(dataset: pd.DataFrame, grid_search_cv: GridSearchCV, r
     maes = []
     r2s = []
     for target_column in Y_TARGET_COLUMNS:
+        model_name = f"{dataset.Name}_{regressor}_m_x_1_{target_column}"
+
+        rna_cdropout_print(f"Processing {model_name}...")
+
         y_train_1_target = y_train[target_column]
         y_test_1_target = y_test[target_column]
 
@@ -86,7 +94,7 @@ def find_best_model_m_x_1(dataset: pd.DataFrame, grid_search_cv: GridSearchCV, r
 
         generate_grid_search_cv_results(
             grid_search_cv.cv_results_,
-            f"{dataset.Name}_{regressor}_m_x_1_{target_column}",
+            model_name,
         )
 
         best_model = grid_search_cv.best_estimator_
@@ -109,6 +117,10 @@ def find_best_model_1_x_1(dataset: pd.DataFrame, grid_search_cv: GridSearchCV, r
     maes = []
     r2s = []
     for (feature_column, target_column) in zip(X_FEATURE_COLUMNS, Y_TARGET_COLUMNS):
+        model_name = f"{dataset.Name}_{regressor}_1_x_1_{feature_column}_{target_column}"
+
+        rna_cdropout_print(f"Processing: {model_name}...")
+
         X_train_1_feature = X_train[feature_column].to_numpy().reshape(-1, 1)
         X_test_1_feature = X_test[feature_column].to_numpy().reshape(-1, 1)
 
@@ -119,7 +131,7 @@ def find_best_model_1_x_1(dataset: pd.DataFrame, grid_search_cv: GridSearchCV, r
 
         generate_grid_search_cv_results(
             grid_search_cv.cv_results_,
-            f"{dataset.Name}_{regressor}_1_x_1_{feature_column}_{target_column}",
+            model_name,
         )
 
         best_model = grid_search_cv.best_estimator_
