@@ -24,7 +24,7 @@ def insert_expected_errors(dataset: pd.DataFrame):
         param_grid = {
             'max_depth'   : [5, 10, 15],
             'criterion'   : ['squared_error', 'absolute_error', 'poisson'],
-            'n_estimators': [1, 100, 200],
+            'n_estimators': [1, 25, 50],
         },
     )
 
