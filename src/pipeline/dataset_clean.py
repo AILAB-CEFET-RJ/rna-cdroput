@@ -82,7 +82,7 @@ def clean_data(dataset_name, rm_negatives, cut_u_25, cut_1_errs, cut_clean_flag)
     print(f"Total data remains: {data_clean_size} of {data_orig_size}.")
 
     name, ext = dataset_name.split('.')
-    data.to_csv(f"./src/data{name}_clean.{ext}", index=False)
+    data.to_csv(f"./src/data/{name}_clean.{ext}", index=False)
 
 
 if __name__ == '__main__':
