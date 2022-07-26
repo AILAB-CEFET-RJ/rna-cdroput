@@ -24,8 +24,8 @@ def insert_expected_errors(dataset: pd.DataFrame):
         cv         = utils.CROSS_VALIDATION_FOLDS,
         n_jobs     = utils.PARALLEL_JOBS,
         param_grid = {
-            'estimator__max_depth': [1, 5, 10],
-            'estimator__objective': ['reg:squarederror'],
+            'max_depth': [1, 5, 10],
+            'objective': ['reg:squarederror'],
         },
     )
 
