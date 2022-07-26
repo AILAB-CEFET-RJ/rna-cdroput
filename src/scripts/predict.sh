@@ -29,3 +29,6 @@ source ./src/scripts/strategies/dt_m_x_m.sh
 source ./src/scripts/strategies/xgb_1_x_1.sh
 source ./src/scripts/strategies/xgb_m_x_1.sh
 source ./src/scripts/strategies/xgb_m_x_m.sh
+
+### GENERATE ERROR RESULTS ###
+python -m src.report.error_results

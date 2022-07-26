@@ -26,11 +26,11 @@ RESULTS_DATASET_PATH = f"./src/report/tables/errors_results.csv"
 def write_result_dataset(line):
     if os.path.isfile(RESULTS_DATASET_PATH):
       with open(RESULTS_DATASET_PATH, 'a') as results_dataset_file:
-        results_dataset_file.write(f"{line},{time.time()}\n")
+        results_dataset_file.write(f"{line},{time.time():.0f}\n")
     else:
       with open(RESULTS_DATASET_PATH, 'a') as results_dataset_file:
         results_dataset_file.write("dataset,regressor,estratégia,mse,mae,r2,timestamp\n")
-        results_dataset_file.write(f"{line},{time.time()}\n")
+        results_dataset_file.write(f"{line},{time.time():.0f}\n")
 
 def split_feature_target(dataset):
   X = dataset[X_FEATURE_COLUMNS]
@@ -153,9 +153,33 @@ def generate_grid_search_cv_results(results, filename: str):
     filepath = f"./src/report/tables/{filename}"
 
     results_df = pd.DataFrame(results)
+
+    results_df.drop(
+        inplace=True,
+        columns=[
+            "params",
+            "mean_fit_time",
+            "std_fit_time",
+            "mean_score_time",
+            "std_score_time",
+            "split0_test_score",
+            "split1_test_score",
+            "split2_test_score",
+            "split3_test_score",
+            "split4_test_score",
+        ],
+    )
+
+    results_df = results_df[results_df.columns[::-1]]
+
+    results_df.set_index("rank_test_score", inplace=True)
+
+    results_df.sort_index(inplace=True)
+
     results_df.to_csv(filepath + ".csv")
-    results_df.to_latex(
+
+    results_df.style.to_latex(
         buf=filepath + ".tex",
-        label=filename,
+        label=f"table_{filename}",
         caption=f"Hiperparâmetros: {filename}",
     )
