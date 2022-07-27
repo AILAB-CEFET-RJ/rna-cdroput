@@ -22,7 +22,7 @@ def insert_expected_errors(dataset: pd.DataFrame):
         cv         = utils.CROSS_VALIDATION_FOLDS,
         n_jobs     = utils.PARALLEL_JOBS,
         param_grid = {
-            'out_of_bounds': ['nan', 'clip'],
+            'out_of_bounds': ['clip'],
         },
     )
 
