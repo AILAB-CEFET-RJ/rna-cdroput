@@ -22,9 +22,7 @@ def insert_expected_errors(dataset: pd.DataFrame):
         cv         = utils.CROSS_VALIDATION_FOLDS,
         n_jobs     = utils.PARALLEL_JOBS,
         param_grid = {
-            'max_depth'   : [5, 10, 15],
-            'criterion'   : ['squared_error', 'absolute_error', 'poisson'],
-            'n_estimators': [1, 25, 50],
+            'criterion': ['squared_error', 'absolute_error', 'poisson'],
         },
     )
 
