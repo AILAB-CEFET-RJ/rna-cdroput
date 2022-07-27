@@ -18,7 +18,10 @@ def insert_expected_errors(dataset: pd.DataFrame):
     dataset_err = dataset.copy(deep=True)
 
     grid_search_cv = GridSearchCV(
-        estimator  = RandomForestRegressor(random_state = utils.RANDOM_STATE),
+        estimator  = RandomForestRegressor(
+            random_state = utils.RANDOM_STATE,
+            n_jobs=utils.USE_ALL_CPU_CORES,
+        ),
         cv         = utils.CROSS_VALIDATION_FOLDS,
         n_jobs     = utils.PARALLEL_JOBS,
         param_grid = {
