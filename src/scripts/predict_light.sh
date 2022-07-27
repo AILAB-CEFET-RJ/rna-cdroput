@@ -16,9 +16,9 @@ do
 
             eval "python -m src.training -n ${dataset}_training_${regressor}_${strategy} -e 10 -dp ErrorBasedInvertedRandomDropout -runs 1 -trainset ${dataset}_data_${regressor}_${strategy}_experrs_train_scaled.csv -valset ${dataset}_data_${regressor}_${strategy}_experrs_val_scaled.csv"
 
-            BEST_MODEL=$(python -m src.modules.best_model_selector -n ${dataset}_training_${regressor}_${strategy})
+            BEST_MODELS=$(python -m src.modules.best_model_selector -n ${dataset}_training_${regressor}_${strategy} -e 10)
 
-            eval "python -m src.predict -model ${BEST_MODEL} -testset ${dataset}_data_${regressor}_${strategy}_experrs_test.csv -dp y"
+            eval "python -m src.predict -models ${BEST_MODELS} -testset ${dataset}_data_${regressor}_${strategy}_experrs_test.csv -dp y"
         done
     done
 done
