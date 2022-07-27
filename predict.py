@@ -45,8 +45,9 @@ def serialize_results(real, preds, mfile):
 
     file_name = mfile.split('/')[-1].split('.hdf5')[0]
     dump_file = f"real_x_pred_{file_name}.csv"
+    epochs = mfile.split('/')[2]
     run = mfile.split('/')[3]
-    dump_dir = f"./output/preds/{run}/"
+    dump_dir = f"./output/preds/{epochs}/{run}/"
     if not os.path.exists(dump_dir):
         os.makedirs(dump_dir)
     filepath = os.path.join(dump_dir, dump_file)
