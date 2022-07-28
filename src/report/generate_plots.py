@@ -1,6 +1,7 @@
 import glob, os
 import pandas as pd
 import seaborn as sns
+import matplotlib.pyplot as plt
 
 from src.modules import utils
 
@@ -30,6 +31,8 @@ def generate_pairplots(dataset: pd.DataFrame):
         y_vars=utils.Y_TARGET_COLUMNS,
     ).savefig(f"src/report/plots/{dataset.Name}_bands_vs_errors.png")
 
+    plt.clf()
+
 def generate_regplots(dataset: pd.DataFrame):
     utils.rna_cdropout_print(f"Generating regplots for {dataset.Name}")
 
@@ -56,9 +59,11 @@ def generate_regplots(dataset: pd.DataFrame):
 def generate_plots():
     found_datasets_paths = glob.glob("src/data/*data.csv")
 
+    found_datasets_paths.append(*glob.glob("src/data/*clean.csv"))
+
     for dataset_path in found_datasets_paths:
-        if "sdss" in dataset_path:
-            if "clean" not in dataset_path: continue
+        if "sdss" in dataset_path and "clean" not in dataset_path:
+            continue
 
         dataset = pd.read_csv(dataset_path, low_memory=False, comment="#")
 
