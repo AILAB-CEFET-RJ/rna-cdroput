@@ -50,6 +50,8 @@ def generate_plots():
     found_datasets_paths = glob.glob("src/data/*data.csv")
 
     for dataset_path in found_datasets_paths:
+        if "sdss" in dataset_path: continue
+
         dataset = pd.read_csv(dataset_path, low_memory=False, comment="#")
 
         dataset.Name = os.path.basename(dataset_path.split(".")[0])
