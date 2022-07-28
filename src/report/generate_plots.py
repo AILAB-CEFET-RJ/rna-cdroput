@@ -40,7 +40,7 @@ def generate_regplots(dataset: pd.DataFrame):
     )
 
     for (feature_name, target_name) in zip(utils.X_FEATURE_COLUMNS, utils.Y_TARGET_COLUMNS):
-        utils.rna_cdropout_print(f"Generating regplot for {feature_name} x {target_name}")        
+        utils.rna_cdropout_print(f"Generating regplot for {feature_name} x {target_name}")
 
         figure = sns.regplot(
             x=feature_name,
@@ -57,7 +57,8 @@ def generate_plots():
     found_datasets_paths = glob.glob("src/data/*data.csv")
 
     for dataset_path in found_datasets_paths:
-        if "sdss" in dataset_path: continue
+        if "sdss" in dataset_path:
+            if "clean" not in dataset_path: continue
 
         dataset = pd.read_csv(dataset_path, low_memory=False, comment="#")
 
