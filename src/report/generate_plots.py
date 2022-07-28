@@ -5,6 +5,8 @@ import seaborn as sns
 from src.modules import utils
 
 def generate_pairplots(dataset: pd.DataFrame):
+    utils.rna_cdropout_print(f"Generating pairplots for {dataset.Name}")
+
     sns.set_theme(
         style="darkgrid",
         font_scale=2,
@@ -29,12 +31,17 @@ def generate_pairplots(dataset: pd.DataFrame):
     ).savefig(f"src/report/plots/{dataset.Name}_bands_vs_errors.png")
 
 def generate_regplots(dataset: pd.DataFrame):
+    utils.rna_cdropout_print(f"Generating regplots for {dataset.Name}")
+
     sns.set_theme(
         style="darkgrid",
         color_codes=True,
+        font_scale=1.2,
     )
 
     for (feature_name, target_name) in zip(utils.X_FEATURE_COLUMNS, utils.Y_TARGET_COLUMNS):
+        utils.rna_cdropout_print(f"Generating regplot for {feature_name} x {target_name}")        
+
         figure = sns.regplot(
             x=feature_name,
             y=target_name,
