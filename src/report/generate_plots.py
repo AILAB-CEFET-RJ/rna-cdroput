@@ -50,11 +50,11 @@ def generate_plots():
     found_datasets_paths = glob.glob("src/data/*data.csv")
 
     for dataset_path in found_datasets_paths:
-        dataset = pd.read_csv(dataset_path)
-
-        utils.rna_cdropout_print(f"Generating plots for {dataset}")
+        dataset = pd.read_csv(dataset_path, low_memory=False, comment="#")
 
         dataset.Name = os.path.basename(dataset_path.split(".")[0])
+
+        utils.rna_cdropout_print(f"Generating plots for {dataset.Name}")
 
         generate_pairplots(dataset)
 
