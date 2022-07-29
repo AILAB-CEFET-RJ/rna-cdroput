@@ -1,17 +1,13 @@
 import glob, os
 import pandas as pd
 import seaborn as sns
-import matplotlib.pyplot as plt
 
 from src.modules import utils
 
+sns.set_theme(font_scale=1.5, rc={'figure.figsize':(11.7,8.27)})
+
 def generate_pairplots(dataset: pd.DataFrame):
     utils.rna_cdropout_print(f"Generating pairplots for {dataset.Name}")
-
-    sns.set_theme(
-        style="darkgrid",
-        font_scale=2,
-    )
 
     sns.pairplot(
         dataset,
@@ -31,31 +27,6 @@ def generate_pairplots(dataset: pd.DataFrame):
         y_vars=utils.Y_TARGET_COLUMNS,
     ).savefig(f"src/report/plots/{dataset.Name}_bands_vs_errors.png")
 
-    plt.clf()
-
-def generate_regplots(dataset: pd.DataFrame):
-    utils.rna_cdropout_print(f"Generating regplots for {dataset.Name}")
-
-    sns.set_theme(
-        style="darkgrid",
-        color_codes=True,
-        font_scale=1.2,
-    )
-
-    for (feature_name, target_name) in zip(utils.X_FEATURE_COLUMNS, utils.Y_TARGET_COLUMNS):
-        utils.rna_cdropout_print(f"Generating regplot for {feature_name} x {target_name}")
-
-        figure = sns.regplot(
-            x=feature_name,
-            y=target_name,
-            data=dataset,
-            line_kws={"color": "red"},
-        ).get_figure()
-
-        figure.savefig(f"src/report/plots/{dataset.Name}_{feature_name}_vs_{target_name}.png")
-
-        figure.clf()
-
 def generate_plots():
     found_datasets_paths = glob.glob("src/data/*data.csv")
 
@@ -69,11 +40,7 @@ def generate_plots():
 
         dataset.Name = os.path.basename(dataset_path.split(".")[0])
 
-        utils.rna_cdropout_print(f"Generating plots for {dataset.Name}")
-
         generate_pairplots(dataset)
-
-        generate_regplots(dataset)
 
 if __name__ == "__main__":
     generate_plots()
