@@ -178,7 +178,7 @@ def generate_grid_search_cv_results(results, filename: str):
 
     results_df.to_csv(filepath + ".csv")
 
-    results_df.style.to_latex(
+    results_df.to_latex(
         buf=filepath + ".tex",
         label=f"table_{filename}",
         caption=f"Hiperparâmetros: {filename}",

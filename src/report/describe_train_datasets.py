@@ -11,7 +11,7 @@ def describe_dataset(dataset: pd.DataFrame):
 
     describe_df = dataset.describe()
 
-    describe_df.style.to_latex(
+    describe_df.to_latex(
         buf=f"./src/report/tables/{dataset.Name}_describe.tex",
         caption=f"Propiedades Estatísicas do conjunto de dados ({dataset.Name})",
         label=f"tab:{dataset.Name}_describe",
