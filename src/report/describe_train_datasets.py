@@ -9,12 +9,24 @@ def describe_dataset(dataset: pd.DataFrame):
 
     dataset.drop(columns=["objid"], inplace=True)
 
+    pd.set_option('display.float_format', lambda x: '%.3f' % x)
+
     describe_df = dataset.describe()
 
-    describe_df.to_latex(
-        buf=f"./src/report/tables/{dataset.Name}_describe.tex",
+    describe_df_features = describe_df[utils.X_FEATURE_COLUMNS]
+
+    describe_df_features.to_latex(
+        buf=f"./src/report/tables/{dataset.Name}_describe_features.tex",
         caption=f"Propiedades Estatísicas do conjunto de dados ({dataset.Name})".replace("_", "\_"),
-        label=f"tab:{dataset.Name}_describe",
+        label=f"tab:{dataset.Name}_describe_features",
+    )
+
+    describe_df_targets = describe_df.drop(columns=utils.X_FEATURE_COLUMNS)
+
+    describe_df_targets.to_latex(
+        buf=f"./src/report/tables/{dataset.Name}_describe_targets.tex",
+        caption=f"Propiedades Estatísicas do conjunto de dados ({dataset.Name})".replace("_", "\_"),
+        label=f"tab:{dataset.Name}_describe_targets",
     )
 
 
