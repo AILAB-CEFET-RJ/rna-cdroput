@@ -33,9 +33,9 @@ python -m src.pipeline.dataset_split -dataset teddy_data_ir_1_x_1_experrs.csv -p
 
 python -m src.pipeline.dataset_scaling -datafiles teddy_data_ir_1_x_1_experrs_train.csv teddy_data_ir_1_x_1_experrs_val.csv teddy_data_ir_1_x_1_experrs_test.csv -scaler StandardScaler
 
-python -m src.training -n teddy_training_ir_1_x_1 -e 10 -dp ErrorBasedInvertedRandomDropout -runs 2 -trainset teddy_data_ir_1_x_1_experrs_train_scaled.csv -valset teddy_data_ir_1_x_1_experrs_val_scaled.csv
+python -m src.training -n teddy_training_ir_1_x_1 -e 3000 -dp ErrorBasedInvertedRandomDropout -runs 2 -trainset teddy_data_ir_1_x_1_experrs_train_scaled.csv -valset teddy_data_ir_1_x_1_experrs_val_scaled.csv
 
-BEST_MODELS=$(python -m src.modules.best_model_selector -n teddy_training_ir_1_x_1 -e 10)
+BEST_MODELS=$(python -m src.modules.best_model_selector -n teddy_training_ir_1_x_1 -e 3000)
 
 eval "python -m src.predict -models ${BEST_MODELS} -testset teddy_data_ir_1_x_1_experrs_test.csv -dp y"
 
@@ -46,9 +46,9 @@ python -m src.pipeline.dataset_split -dataset happy_data_ir_1_x_1_experrs.csv -p
 
 python -m src.pipeline.dataset_scaling -datafiles happy_data_ir_1_x_1_experrs_train.csv happy_data_ir_1_x_1_experrs_val.csv happy_data_ir_1_x_1_experrs_test.csv -scaler StandardScaler
 
-python -m src.training -n happy_training_ir_1_x_1 -e 10 -dp ErrorBasedInvertedRandomDropout -runs 2 -trainset happy_data_ir_1_x_1_experrs_train_scaled.csv -valset happy_data_ir_1_x_1_experrs_val_scaled.csv
+python -m src.training -n happy_training_ir_1_x_1 -e 3000 -dp ErrorBasedInvertedRandomDropout -runs 2 -trainset happy_data_ir_1_x_1_experrs_train_scaled.csv -valset happy_data_ir_1_x_1_experrs_val_scaled.csv
 
-BEST_MODELS=$(python -m src.modules.best_model_selector -n happy_training_ir_1_x_1 -e 10)
+BEST_MODELS=$(python -m src.modules.best_model_selector -n happy_training_ir_1_x_1 -e 3000)
 
 eval "python -m src.predict -models ${BEST_MODELS} -testset happy_data_ir_1_x_1_experrs_test.csv -dp y"
 
