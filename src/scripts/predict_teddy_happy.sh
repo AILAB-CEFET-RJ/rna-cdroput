@@ -14,9 +14,9 @@ do
 
             eval "python -m src.pipeline.dataset_scaling -datafiles ${dataset}_data_${regressor}_${strategy}_experrs_train.csv ${dataset}_data_${regressor}_${strategy}_experrs_val.csv ${dataset}_data_${regressor}_${strategy}_experrs_test.csv -scaler StandardScaler"
 
-            eval "python -m src.training -n ${dataset}_training_${regressor}_${strategy} -e 10 -dp ErrorBasedInvertedRandomDropout -runs 2 -trainset ${dataset}_data_${regressor}_${strategy}_experrs_train_scaled.csv -valset ${dataset}_data_${regressor}_${strategy}_experrs_val_scaled.csv"
+            eval "python -m src.training -n ${dataset}_training_${regressor}_${strategy} -e 3000 -dp ErrorBasedInvertedRandomDropout -runs 2 -trainset ${dataset}_data_${regressor}_${strategy}_experrs_train_scaled.csv -valset ${dataset}_data_${regressor}_${strategy}_experrs_val_scaled.csv"
 
-            BEST_MODELS=$(python -m src.modules.best_model_selector -n ${dataset}_training_${regressor}_${strategy} -e 10)
+            BEST_MODELS=$(python -m src.modules.best_model_selector -n ${dataset}_training_${regressor}_${strategy} -e 3000)
 
             eval "python -m src.predict -models ${BEST_MODELS} -testset ${dataset}_data_${regressor}_${strategy}_experrs_test.csv -dp y"
         done
