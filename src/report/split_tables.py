@@ -14,7 +14,7 @@ def split_table(csv_path: str):
 
         splitted_table_df.to_latex(
             buf=f"src/report/tables_splitted/{filename}_split_{split_counter:02d}" + ".tex",
-            label=f"table_{filename}",
+            label=f"table_{filename}_split_{split_counter:02d}",
             caption=f"Hiperparâmetros: {filename}".replace("_", "\_"),
         )
 
