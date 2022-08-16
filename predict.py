@@ -38,13 +38,17 @@ def load_model(file):
         return m
 
 
-def serialize_results(real, preds, mfile):
+def serialize_results(real, preds, mfile, name):
     df = pd.DataFrame()
     df['Real'] = real
     df['Pred'] = preds.flatten()
 
     file_name = mfile.split('/')[-1].split('.hdf5')[0]
+
     dump_file = f"real_x_pred_{file_name}.csv"
+    if name:
+        dump_file = f"real_x_pred_{name}_{file_name}.csv"
+
     epochs = mfile.split('/')[2]
     run = mfile.split('/')[3]
     dump_dir = f"./output/preds/{epochs}/{run}/"
@@ -57,7 +61,7 @@ def serialize_results(real, preds, mfile):
     print(f"Result[{dump_file}] dumped!")
 
 
-def predict(model_files, testset, batch_size, dropout):
+def predict(model_files, testset, batch_size, dropout, name):
     for model_file in model_files:
         model = load_model(model_file)
         print(f"Using batch size: {batch_size}")
@@ -77,11 +81,11 @@ def predict(model_files, testset, batch_size, dropout):
         y_test = test_df[target]
 
         outputs = model.predict(x_test, batch_size=batch_size)
-        serialize_results(y_test, outputs, model_file)
+        serialize_results(y_test, outputs, model_file, name)
 
 
 if __name__ == '__main__':
     parser = parser()
     args = parser.parse_args()
 
-    predict(args.models, args.testset, args.bs, args.dp)
+    predict(args.models, args.testset, args.bs, args.dp, args.n)
