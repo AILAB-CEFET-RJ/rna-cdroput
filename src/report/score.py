@@ -63,7 +63,7 @@ def scores(dir):
                 data[name]['rmse'] = np.array([rmse])
                 data[name]['mad'] = np.array([mad])
                 data[name]['mae'] = np.array([mae])
-                data[name]['r2'] = np.array([mse])
+                data[name]['r2'] = np.array([r2])
 
     for name in data:
         result_df.loc[len(result_df)] = [
