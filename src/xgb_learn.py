@@ -60,10 +60,10 @@ def learn(trainset: str, testsets: list[str]):
     train_mae = metrics.mean_absolute_error(y_test, best_model.predict(X_test))
     train_r2 = metrics.r2_score(y_test, best_model.predict(X_test))
 
-    utils.write_xgb_result_dataset(f"{trainset},{train_mse:.6f},{train_mae:.6f},{train_r2:.6f}")
+    # utils.write_xgb_result_dataset(f"{trainset},{train_mse:.6f},{train_mae:.6f},{train_r2:.6f}")
 
     for (testset, testset_df) in zip(testsets, testsets_dfs):
-        utils.rna_cdropout_print(f"Testing model in testset: {trainset}...")
+        utils.rna_cdropout_print(f"Testing model in testset: {testset}...")
 
         test_X = testset_df[features]
         test_y = testset_df[target]
