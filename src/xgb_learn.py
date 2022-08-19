@@ -56,9 +56,11 @@ def learn(trainset: str, testsets: list[str]):
 
     best_model = grid_search_cv.best_estimator_
 
-    train_mse = metrics.mean_squared_error(y_test, best_model.predict(X_test))
-    train_mae = metrics.mean_absolute_error(y_test, best_model.predict(X_test))
-    train_r2 = metrics.r2_score(y_test, best_model.predict(X_test))
+    train_prediction = best_model.predict(X_test)
+
+    train_mse = metrics.mean_squared_error(y_test, train_prediction)
+    train_mae = metrics.mean_absolute_error(y_test, train_prediction)
+    train_r2 = metrics.r2_score(y_test, train_prediction)
 
     # utils.write_xgb_result_dataset(f"{trainset},{train_mse:.6f},{train_mae:.6f},{train_r2:.6f}")
 
@@ -68,9 +70,11 @@ def learn(trainset: str, testsets: list[str]):
         test_X = testset_df[features]
         test_y = testset_df[target]
 
-        test_mse = metrics.mean_squared_error(test_y, best_model.predict(test_X))
-        test_mae = metrics.mean_absolute_error(test_y, best_model.predict(test_X))
-        test_r2 = metrics.r2_score(test_y, best_model.predict(test_X))
+        test_prediction = best_model.predict(test_X)
+
+        test_mse = metrics.mean_squared_error(test_y, test_prediction)
+        test_mae = metrics.mean_absolute_error(test_y, test_prediction)
+        test_r2 = metrics.r2_score(test_y, test_prediction)
 
         utils.write_xgb_result_dataset(f"{testset},{test_mse:.6f},{test_mae:.6f},{test_r2:.6f}")
 
