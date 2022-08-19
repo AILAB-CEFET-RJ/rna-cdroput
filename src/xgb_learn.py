@@ -30,7 +30,7 @@ def learn(trainset: str, testsets: list[str]):
         cv         = utils.CROSS_VALIDATION_FOLDS,
         n_jobs     = utils.PARALLEL_JOBS,
         param_grid = {
-            'max_depth': [1, 5, 10],
+            'max_depth': [5, 6, 10],
             'objective': ['reg:squarederror'],
         },
     )
