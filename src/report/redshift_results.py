@@ -13,7 +13,14 @@ def init_redshift_results():
 
     results_df = results_df[["MSE_MEAN", "RMSE_MEAN", "MAD_MEAN", "R2_MEAN"]]
 
-    results_df.index = results_df.index.map(lambda model: model.replace("_training", ""))
+    results_df.index = results_df.index.map(
+        lambda model: model
+            .split("real_x_pred_")[1]
+            .replace("_training", "")
+            .replace("_model", "")
+            .replace("_teddy", "")
+            .replace("_happy", "")
+    )
 
     results_df.to_latex(
         buf="src/report/tables/redshift_results" + ".tex",
