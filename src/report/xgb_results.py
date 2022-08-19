@@ -17,8 +17,18 @@ if __name__ == "__main__":
             .replace("_experrs.csv", "")
     )
 
-    results_df.to_latex(
-        buf="./src/report/tables/xgb_results.tex",
-        caption="Predição de redshift (XGBoost)",
-        label="tab:xgb_results",
+    teddy_results_df = results_df.filter(regex='teddy', axis=0)
+
+    teddy_results_df.to_latex(
+        buf="./src/report/tables/xgb_teddy_results.tex",
+        caption="Predição de redshift com XGBoost para os conjuntos de teste do Teddy",
+        label="tab:xgb_teddy_results",
+    )
+
+    happy_results_df = results_df.filter(regex='happy', axis=0)
+
+    happy_results_df.to_latex(
+        buf="./src/report/tables/xgb_happy_results.tex",
+        caption="Predição de redshift com XGBoost para os conjuntos de teste do Happy",
+        label="tab:xgb_happy_results",
     )
