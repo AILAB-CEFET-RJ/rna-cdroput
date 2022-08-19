@@ -183,3 +183,14 @@ def generate_grid_search_cv_results(results, filename: str):
         label=f"table_{filename}",
         caption=f"Hiperparâmetros: {filename}".replace("_", "\_"),
     )
+
+XGB_RESULTS_DATASET_PATH = f"./src/report/tables/xgb_results.csv"
+
+def write_xgb_result_dataset(line):
+    if os.path.isfile(XGB_RESULTS_DATASET_PATH):
+      with open(XGB_RESULTS_DATASET_PATH, 'a') as results_dataset_file:
+        results_dataset_file.write(f"{line},{time.time():.0f}\n")
+    else:
+      with open(XGB_RESULTS_DATASET_PATH, 'a') as results_dataset_file:
+        results_dataset_file.write("MODEL,MSE,MAD,R2,timestamp\n")
+        results_dataset_file.write(f"{line},{time.time():.0f}\n")

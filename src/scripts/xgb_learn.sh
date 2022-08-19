@@ -1,0 +1,1 @@
+python -m src.xgb_learn -trainset happy_data_xgb_m_x_m_experrs.csv -testset happy_test_data_B_xgb_m_x_m_experrs.csv happy_test_data_C_xgb_m_x_m_experrs.csv happy_test_data_D_xgb_m_x_m_experrs.csv
