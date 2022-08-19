@@ -19,7 +19,7 @@ if __name__ == "__main__":
 
     teddy_results_df = results_df.filter(regex='teddy', axis=0)
 
-    teddy_results_df.to_latex(
+    teddy_results_df.head(40).to_latex(
         buf="./src/report/tables/xgb_teddy_results.tex",
         caption="Predição de redshift com XGBoost para os conjuntos de teste do Teddy",
         label="tab:xgb_teddy_results",
