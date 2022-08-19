@@ -35,7 +35,7 @@ def learn(trainset: str, testsets: list[str]):
         },
     )
 
-    features = [*utils.X_FEATURE_COLUMNS, *utils.Y_TARGET_COLUMNS]
+    features = [*utils.X_FEATURE_COLUMNS, *utils.Y_TARGET_COLUMNS, *[f"{column}_exp" for column in utils.Y_TARGET_COLUMNS]]
 
     target = 'redshift'
 
